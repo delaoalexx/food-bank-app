@@ -1,8 +1,5 @@
 import React from "react";
-
 import { TableRow, TableCell, Box, Typography } from "@mui/material";
-
-import Inventory2Icon from "@mui/icons-material/Inventory2";
 
 const InventoryRow = ({ product, isReplica = false }) => {
   return (
@@ -22,21 +19,6 @@ const InventoryRow = ({ product, isReplica = false }) => {
             gap: 2,
           }}
         >
-          <Box
-            sx={{
-              width: 38,
-              height: 38,
-              borderRadius: "12px",
-              backgroundColor: "#FFF7ED",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#F97316",
-            }}
-          >
-            <Inventory2Icon />
-          </Box>
-
           <Typography
             sx={{
               fontWeight: 700,

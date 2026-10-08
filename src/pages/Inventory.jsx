@@ -1,7 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-
 import { Box, Typography, Button, Paper, Pagination } from "@mui/material";
-
 import AddIcon from "@mui/icons-material/Add";
 import MainLayout from "../components/layout/MainLayout";
 import SearchBar from "../components/inventory/SearchBar";
@@ -11,12 +9,10 @@ import { getProducts } from "../services/api";
 
 const Inventory = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  // Paginación
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 5;
   const [openModal, setOpenModal] = useState(false);
 
-  // Los productos vendrán del backend
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -49,7 +45,6 @@ const Inventory = () => {
     fetchProducts();
   }, []);
 
-  // Productos filtrados
   const filteredProducts = useMemo(() => {
     return products.filter(
       (product) =>
@@ -58,7 +53,6 @@ const Inventory = () => {
     );
   }, [searchTerm, products]);
 
-  // Lógica de paginación
   const startIndex = (currentPage - 1) * productsPerPage;
   const endIndex = startIndex + productsPerPage;
   const currentProducts = filteredProducts.slice(startIndex, endIndex);
@@ -91,97 +85,117 @@ const Inventory = () => {
   return (
     <MainLayout>
       <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 4,
-          gap: 3,
-          flexWrap: "wrap",
-        }}
+        sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}
       >
-        <Typography
-          variant="h4"
+        {/* 1. HEADER SECTION */}
+        <Box
           sx={{
-            fontWeight: 700,
-            color: "#171717",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            width: "100%",
+            minHeight: "44px",
           }}
         >
-          Inventario
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpen}
-          sx={{
-            backgroundColor: "#F97316",
-            borderRadius: "14px",
-            textTransform: "none",
-            fontWeight: 600,
-            paddingX: 3,
-            paddingY: 1.2,
-            "&:hover": {
-              backgroundColor: "#EA580C",
-            },
-          }}
-        >
-          Agregar producto
-        </Button>
-      </Box>
-
-      {/* Buscador */}
-      <Box sx={{ marginBottom: 3 }}>
-        <SearchBar
-          placeholder="Buscar productos"
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setCurrentPage(1);
-          }}
-        />
-      </Box>
-
-      {/* Tabla */}
-      <Paper
-        sx={{
-          padding: 3,
-          borderRadius: "24px",
-          border: "1px solid #E7E5E4",
-          boxShadow: "0px 1px 2px rgba(0,0,0,0.04)",
-        }}
-      >
-        <Typography
-          sx={{
-            fontWeight: 700,
-            fontSize: "24px",
-            marginBottom: 3,
-            color: "#171717",
-          }}
-        >
-          Productos totales ({filteredProducts.length})
-        </Typography>
-
-        <InventoryTable products={currentProducts} loading={loading} />
-
-        {totalPages > 1 && (
-          <Box
+          <Typography
+            variant="h4"
             sx={{
-              display: "flex",
-              justifyContent: "center",
-              marginTop: 4,
+              fontWeight: 700,
+              color: "#171717",
             }}
           >
-            <Pagination
-              count={totalPages}
-              page={currentPage}
-              onChange={(event, value) => setCurrentPage(value)}
-              color="primary"
-            />
-          </Box>
-        )}
-      </Paper>
+            Inventario
+          </Typography>
 
-      {/* Modal */}
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleOpen}
+            sx={{
+              backgroundColor: "#029739",
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 600,
+              paddingX: 2.5,
+              paddingY: 1,
+              boxShadow: "none",
+              "&:hover": {
+                backgroundColor: "#15803d",
+                boxShadow: "none",
+              },
+            }}
+          >
+            Agregar producto
+          </Button>
+        </Box>
+
+        {/* 2. SEARCHBAR FRAME */}
+        <Box sx={{ width: "100%" }}>
+          <SearchBar
+            placeholder="Buscar productos"
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
+        </Box>
+
+        {/* 3. INVENTORY CARD WRAPPER */}
+        <Paper
+          sx={{
+            padding: "24px 24px 24px 24px",
+            borderRadius: "12px", // Ajustado a Figma
+            border: "1px solid #E7E5E4",
+            boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.05)",
+            backgroundColor: "#FFFFFF",
+            width: "100%",
+            boxSizing: "border-box",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 700,
+              fontSize: "20px",
+              marginBottom: 2,
+              color: "#171717",
+            }}
+          >
+            Productos totales ({filteredProducts.length})
+          </Typography>
+
+          <InventoryTable products={currentProducts} loading={loading} />
+
+          {totalPages > 1 && (
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                marginTop: 3,
+              }}
+            >
+              <Pagination
+                count={totalPages}
+                page={currentPage}
+                onChange={(event, value) => setCurrentPage(value)}
+                sx={{
+                  "& .MuiPaginationItem-root.Mui-selected": {
+                    backgroundColor: "#029739",
+                    color: "#ffffff",
+                    "&:hover": {
+                      backgroundColor: "#15803d",
+                    },
+                  },
+                }}
+              />
+            </Box>
+          )}
+        </Paper>
+      </Box>
+
+      {/* MODAL */}
       <AddProductModal
         open={openModal}
         handleClose={handleClose}

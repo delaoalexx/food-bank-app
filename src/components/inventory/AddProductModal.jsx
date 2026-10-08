@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Dialog,
-  DialogContent,
   Typography,
   Box,
   TextField,
@@ -24,6 +23,13 @@ const AddProductModal = ({ open, handleClose, onProductCreated }) => {
   const [success, setSuccess] = useState(false);
 
   const submitLock = useRef(false);
+
+  // Estilo reutilizable para forzar border-radius de 12px en los TextFields
+  const textFieldStyle = {
+    "& .MuiOutlinedInput-root": {
+      borderRadius: "12px",
+    },
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -132,34 +138,62 @@ const AddProductModal = ({ open, handleClose, onProductCreated }) => {
     <Dialog
       open={open}
       onClose={loading ? undefined : handleModalClose}
-      maxWidth="sm"
-      fullWidth
       PaperProps={{
         sx: {
-          borderRadius: "32px",
-          padding: 2,
+          borderRadius: "12px", // Modal con 12px
+          width: "100%",
+          maxWidth: "576px",
+          margin: "16px",
+          boxShadow: "0px 8px 24px rgba(0, 0, 0, 0.1)",
+          overflow: "hidden",
         },
       }}
     >
-      <DialogContent>
+      {/* MODAL HEADER */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          padding: "32px 40px 24px 24px",
+          gap: "8px",
+          boxSizing: "border-box",
+        }}
+      >
         <Typography
-          variant="h4"
           sx={{
-            fontWeight: "bold",
+            fontWeight: 700,
+            fontSize: "24px",
             color: "#171717",
-            marginBottom: 4,
+            lineHeight: 1.2,
           }}
         >
           Agregar producto
         </Typography>
+      </Box>
 
+      {/* MODAL FORM */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          padding: "0px 24px 32px 24px",
+          gap: "24px",
+          width: "100%",
+          boxSizing: "border-box",
+        }}
+      >
         {success && (
-          <Alert severity="success" sx={{ mb: 3 }}>
+          <Alert
+            severity="success"
+            sx={{ width: "100%", borderRadius: "12px" }}
+          >
             ¡Producto agregado correctamente!
           </Alert>
         )}
 
-        {/* Producto */}
+        {/* Campo Producto */}
         <TextField
           fullWidth
           label="Producto"
@@ -167,18 +201,14 @@ const AddProductModal = ({ open, handleClose, onProductCreated }) => {
           value={name}
           onChange={(e) => {
             setName(e.target.value);
-
-            setErrors((prev) => ({
-              ...prev,
-              name: "",
-            }));
+            setErrors((prev) => ({ ...prev, name: "" }));
           }}
           error={!!errors.name}
           helperText={errors.name}
-          sx={{ marginBottom: 3 }}
+          sx={textFieldStyle} // 12px de borderRadius
         />
 
-        {/* Categoría */}
+        {/* Campo Categoría */}
         <TextField
           fullWidth
           select
@@ -186,15 +216,11 @@ const AddProductModal = ({ open, handleClose, onProductCreated }) => {
           value={categoryId}
           onChange={(e) => {
             setCategoryId(e.target.value);
-
-            setErrors((prev) => ({
-              ...prev,
-              category: "",
-            }));
+            setErrors((prev) => ({ ...prev, category: "" }));
           }}
           error={!!errors.category}
           helperText={errors.category}
-          sx={{ marginBottom: 4 }}
+          sx={textFieldStyle} // 12px de borderRadius
         >
           {categories.map((category) => (
             <MenuItem key={category.id} value={category.id}>
@@ -208,8 +234,8 @@ const AddProductModal = ({ open, handleClose, onProductCreated }) => {
           sx={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
-            gap: 2,
-            marginBottom: 3,
+            gap: "16px",
+            width: "100%",
           }}
         >
           <TextField
@@ -219,15 +245,12 @@ const AddProductModal = ({ open, handleClose, onProductCreated }) => {
             value={quantity}
             onChange={(e) => {
               setQuantity(e.target.value);
-
-              setErrors((prev) => ({
-                ...prev,
-                quantity: "",
-              }));
+              setErrors((prev) => ({ ...prev, quantity: "" }));
             }}
             error={!!errors.quantity}
             helperText={errors.quantity}
             inputProps={{ min: 1 }}
+            sx={textFieldStyle} // 12px de borderRadius
           />
 
           <TextField
@@ -237,14 +260,11 @@ const AddProductModal = ({ open, handleClose, onProductCreated }) => {
             value={unit}
             onChange={(e) => {
               setUnit(e.target.value);
-
-              setErrors((prev) => ({
-                ...prev,
-                unit: "",
-              }));
+              setErrors((prev) => ({ ...prev, unit: "" }));
             }}
             error={!!errors.unit}
             helperText={errors.unit}
+            sx={textFieldStyle} // 12px de borderRadius
           >
             <MenuItem value="pz">Pz</MenuItem>
             <MenuItem value="kg">Kg</MenuItem>
@@ -254,11 +274,13 @@ const AddProductModal = ({ open, handleClose, onProductCreated }) => {
           </TextField>
         </Box>
 
-        {/* Botones */}
+        {/* Botones de Acción */}
         <Box
           sx={{
             display: "flex",
-            gap: 2,
+            gap: "16px",
+            width: "100%",
+            marginTop: 1,
           }}
         >
           <Button
@@ -267,9 +289,16 @@ const AddProductModal = ({ open, handleClose, onProductCreated }) => {
             onClick={handleModalClose}
             disabled={loading}
             sx={{
-              borderRadius: "16px",
-              paddingY: 1.5,
+              borderRadius: "12px", // 12px de borderRadius
+              paddingY: 1.2,
               textTransform: "none",
+              fontWeight: 400,
+              borderColor: "#E7E5E4",
+              color: "#44403C",
+              "&:hover": {
+                borderColor: "#A8A29E",
+                backgroundColor: "#F5F5F4",
+              },
             }}
           >
             Cancelar
@@ -282,20 +311,22 @@ const AddProductModal = ({ open, handleClose, onProductCreated }) => {
             disabled={loading}
             onClick={handleSubmit}
             sx={{
-              borderRadius: "16px",
-              paddingY: 1.5,
+              borderRadius: "12px", // 12px de borderRadius
+              paddingY: 1.2,
               textTransform: "none",
-              backgroundColor: "#F97316",
-
+              fontWeight: 600,
+              backgroundColor: "#029739",
+              boxShadow: "none",
               "&:hover": {
-                backgroundColor: "#EA580C",
+                backgroundColor: "#15803d",
+                boxShadow: "none",
               },
             }}
           >
             Agregar producto
           </LoadingButton>
         </Box>
-      </DialogContent>
+      </Box>
     </Dialog>
   );
 };
