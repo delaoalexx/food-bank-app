@@ -14,7 +14,7 @@ const BranchSelector = ({ branches, selectedBranch, onChange }) => {
         onChange={onChange}
         displayEmpty
         sx={{
-          borderRadius: "14px",
+          borderRadius: "12px",
           backgroundColor: "#FFFFFF",
           "& .MuiOutlinedInput-notchedOutline": {
             borderColor: "#E7E5E4",

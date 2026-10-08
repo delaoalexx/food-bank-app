@@ -1,9 +1,8 @@
 import React, { useState, useMemo, useEffect } from "react";
-
 import { Box, Typography, Paper, Pagination } from "@mui/material";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 
-import Sidebar from "../components/layout/Sidebar";
+import MainLayout from "../components/layout/MainLayout";
 import SearchBar from "../components/inventory/SearchBar";
 import InventoryTable from "../components/inventory/InventoryTable";
 import BranchSelector from "../components/network/BranchSelector";
@@ -23,7 +22,7 @@ const NetworkInventory = () => {
 
   const availableBranches = useMemo(
     () => allBranches.filter((branch) => branch.key !== CURRENT_NODE),
-    [CURRENT_NODE],
+    [CURRENT_NODE]
   );
 
   const [selectedBranchId, setSelectedBranchId] = useState("");
@@ -54,7 +53,7 @@ const NetworkInventory = () => {
 
   const selectedBranchData = useMemo(
     () => availableBranches.find((branch) => branch.id === selectedBranchId),
-    [selectedBranchId, availableBranches],
+    [selectedBranchId, availableBranches]
   );
 
   const fetchProducts = async () => {
@@ -77,7 +76,6 @@ const NetworkInventory = () => {
         }));
 
         setBranchProducts(formattedProducts);
-
         return;
       }
 
@@ -91,7 +89,7 @@ const NetworkInventory = () => {
         const productosReplica = replicas.filter(
           (p) =>
             p.banco_origen?.toLowerCase() ===
-            selectedBranchData.key.toLowerCase(),
+            selectedBranchData.key.toLowerCase()
         );
 
         const formattedReplica = productosReplica.map((product) => ({
@@ -121,14 +119,13 @@ const NetworkInventory = () => {
       branchProducts.filter(
         (product) =>
           (isReplica || product.quantity > 0) &&
-          (product.name ?? "").toLowerCase().includes(searchTerm.toLowerCase()),
+          (product.name ?? "").toLowerCase().includes(searchTerm.toLowerCase())
       ),
-    [branchProducts, searchTerm],
+    [branchProducts, searchTerm, isReplica]
   );
 
   const paginatedProducts = useMemo(() => {
     const start = (page - 1) * productsPerPage;
-
     return filteredProducts.slice(start, start + productsPerPage);
   }, [filteredProducts, page]);
 
@@ -136,37 +133,22 @@ const NetworkInventory = () => {
 
   const handleBranchChange = (event) => {
     setSelectedBranchId(event.target.value);
-
     setPage(1);
     setSearchTerm("");
   };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        height: "100vh",
-      }}
-    >
-      <Sidebar />
-
-      <Box
-        sx={{
-          flexGrow: 1,
-          padding: 4,
-          backgroundColor: "#F9FAFB",
-          overflowY: "auto",
-        }}
-      >
-        {/* Header */}
+    <MainLayout>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
+        
+        {/* 1. HEADER SECTION */}
         <Box
           sx={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 4,
-            gap: 3,
-            flexWrap: "wrap",
+            width: "100%",
+            minHeight: "44px",
           }}
         >
           <Typography
@@ -186,12 +168,8 @@ const NetworkInventory = () => {
           />
         </Box>
 
-        {/* Buscador */}
-        <Box
-          sx={{
-            marginBottom: 3,
-          }}
-        >
+        {/* 2. SEARCHBAR FRAME */}
+        <Box sx={{ width: "100%" }}>
           <SearchBar
             placeholder="Buscar productos"
             value={searchTerm}
@@ -201,31 +179,23 @@ const NetworkInventory = () => {
             }}
           />
         </Box>
+
+        {/* ALERTA DE DATO REPLICADO */}
         {isReplica && (
           <Box
             sx={{
               display: "flex",
               alignItems: "center",
               gap: 1.5,
-
-              mb: 2,
               px: 2,
               py: 1.2,
-
-              borderRadius: "10px",
-
+              borderRadius: "12px",
               backgroundColor: "#FFFBEB",
               border: "1px solid #FDE68A",
-
               color: "#92400E",
             }}
           >
-            <WarningAmberIcon
-              sx={{
-                fontSize: 22,
-              }}
-            />
-
+            <WarningAmberIcon sx={{ fontSize: 22 }} />
             <Typography
               sx={{
                 fontSize: "14px",
@@ -233,26 +203,30 @@ const NetworkInventory = () => {
                 lineHeight: 1.4,
               }}
             >
-              Mostrando datos replicados. La sucursal seleccionada no está
-              disponible.
+              Mostrando datos replicados. La sucursal seleccionada no está disponible.
             </Typography>
           </Box>
         )}
 
-        {/* Tabla */}
+        {/* 3. INVENTORY CARD WRAPPER */}
         <Paper
           sx={{
-            padding: 3,
-            borderRadius: "24px",
+            padding: "24px",
+            borderRadius: "12px",
             border: "1px solid #E7E5E4",
-            boxShadow: "0px 1px 2px rgba(0,0,0,0.04)",
+            boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.05)",
+            backgroundColor: "#FFFFFF",
+            width: "100%",
+            boxSizing: "border-box",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
           <Typography
             sx={{
               fontWeight: 700,
-              fontSize: "24px",
-              marginBottom: 3,
+              fontSize: "20px",
+              marginBottom: 2,
               color: "#171717",
             }}
           >
@@ -262,12 +236,7 @@ const NetworkInventory = () => {
           </Typography>
 
           {error ? (
-            <Box
-              sx={{
-                paddingY: 8,
-                textAlign: "center",
-              }}
-            >
+            <Box sx={{ paddingY: 8, textAlign: "center" }}>
               <Typography color="error">{error}</Typography>
             </Box>
           ) : (
@@ -283,22 +252,31 @@ const NetworkInventory = () => {
                   sx={{
                     display: "flex",
                     justifyContent: "center",
-                    marginTop: 4,
+                    marginTop: 3,
                   }}
                 >
                   <Pagination
                     count={totalPages}
                     page={page}
                     onChange={(_, value) => setPage(value)}
-                    color="primary"
+                    sx={{
+                      "& .MuiPaginationItem-root.Mui-selected": {
+                        backgroundColor: "#029739",
+                        color: "#ffffff",
+                        "&:hover": {
+                          backgroundColor: "#027a2e",
+                        },
+                      },
+                    }}
                   />
                 </Box>
               )}
             </>
           )}
         </Paper>
+
       </Box>
-    </Box>
+    </MainLayout>
   );
 };
 
