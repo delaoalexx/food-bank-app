@@ -1,6 +1,20 @@
 import { useState, useEffect } from "react";
 import RequestCard from "../../components/requests/RequestCard";
-import {Box,Button,Typography,Dialog,DialogContent,TextField,MenuItem,Pagination,Skeleton,Card,CardContent,} from "@mui/material";
+import EmptyState from "../../components/common/EmptyState";
+import CancelScheduleSendIcon from "@mui/icons-material/CancelScheduleSend";
+import {
+  Box,
+  Button,
+  Typography,
+  Dialog,
+  TextField,
+  MenuItem,
+  Pagination,
+  Skeleton,
+  Card,
+  CardContent,
+} from "@mui/material";
+import LoadingButton from "@mui/lab/LoadingButton";
 import {
   CURRENT_NODE,
   getSolicitudesEnviadas,
@@ -14,6 +28,12 @@ const SUCURSALES = [
   { key: "loreto", label: "Loreto" },
   { key: "mulege", label: "Mulegé" },
 ];
+
+const textFieldStyle = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+  },
+};
 
 const Sent = ({ open, setOpen }) => {
   const [solicitudes, setSolicitudes] = useState([]);
@@ -43,20 +63,18 @@ const Sent = ({ open, setOpen }) => {
 
   useEffect(() => {
     fetchSolicitudes();
-    const interval = setInterval(() => fetchSolicitudes(false), 10000); // cada 10s
+    const interval = setInterval(() => fetchSolicitudes(false), 10000);
     return () => clearInterval(interval);
   }, []);
+
   const handleSucursalChange = async (e) => {
     const valor = e.target.value;
-
     setSucursal(valor);
     setProductoId("");
-
     setLoadingProductos(true);
 
     try {
       const data = await getBranchProducts(valor);
-
       setProductosSucursal(data.productos || data);
     } catch (error) {
       console.error(error);
@@ -66,39 +84,13 @@ const Sent = ({ open, setOpen }) => {
     }
   };
 
-  //   const handleEnviar = async () => {
-  //   if (!sucursal || !productoId || !cantidad) return;
-
-  //   setEnviando(true);
-
-  //   try {
-  //     const productoElegido = productosSucursal.find(
-  //       (p) => p.id === Number(productoId)
-  //     );
-
-  //     if (!productoElegido) {
-  //       alert("Producto no encontrado");
-  //       return;
-  //     }
-
-  //     await createSolicitud({
-  //       origen: sucursal,
-  //       producto_nombre: productoElegido.nombre,
-  //       cantidad: Number(cantidad),
-  //     });
-
-  //     setOpen(false);
-  //     setSucursal("");
-  //     setProductoId("");
-  //     setCantidad("");
-
-  //     fetchSolicitudes();
-  //   } catch (e) {
-  //     console.error("Error enviando solicitud:", e);
-  //   } finally {
-  //     setEnviando(false);
-  //   }
-  // };
+  const handleModalClose = () => {
+    setOpen(false);
+    setSucursal("");
+    setProductoId("");
+    setCantidad("");
+    setErrors({});
+  };
 
   const handleEnviar = async () => {
     const newErrors = {};
@@ -141,12 +133,7 @@ const Sent = ({ open, setOpen }) => {
         cantidad: Number(cantidad),
       });
 
-      setOpen(false);
-      setSucursal("");
-      setProductoId("");
-      setCantidad("");
-      setErrors({});
-
+      handleModalClose();
       fetchSolicitudes();
     } catch (e) {
       console.error(e);
@@ -168,13 +155,21 @@ const Sent = ({ open, setOpen }) => {
         sx={{
           display: "flex",
           flexDirection: "column",
-          gap: 3,
-          marginBottom: 8,
+          gap: 2,
+          width: "100%",
+          minHeight: "calc(100vh - 220px)",
         }}
       >
         {loading ? (
           [1, 2, 3].map((item) => (
-            <Card key={item} sx={{ borderRadius: 4, boxShadow: 2 }}>
+            <Card
+              key={item}
+              sx={{
+                borderRadius: "12px",
+                boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.05)",
+                border: "1px solid #E7E5E4",
+              }}
+            >
               <CardContent>
                 <Skeleton width="35%" height={25} />
                 <Box sx={{ mt: 2 }}>
@@ -194,9 +189,35 @@ const Sent = ({ open, setOpen }) => {
             </Card>
           ))
         ) : solicitudes.length === 0 ? (
-          <Typography color="text.secondary">
-            No hay solicitudes enviadas.
-          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              flex: 1,
+              width: "100%",
+              py: 8,
+            }}
+          >
+            <EmptyState
+              icon={CancelScheduleSendIcon}
+              title="Sin solicitudes enviadas"
+              description="Aún no has solicitado productos a otras sucursales."
+              sx={{
+                "& .MuiSvgIcon-root": { fontSize: 64, color: "#A3A3A3" },
+                "& .MuiTypography-h6": {
+                  fontSize: "20px",
+                  fontWeight: 700,
+                  mt: 2,
+                },
+                "& .MuiTypography-body2": {
+                  fontSize: "15px",
+                  color: "#737373",
+                  maxWidth: "380px",
+                },
+              }}
+            />
+          </Box>
         ) : (
           <>
             {currentSolicitudes.map((s) => (
@@ -209,12 +230,20 @@ const Sent = ({ open, setOpen }) => {
             ))}
 
             {totalPages > 1 && (
-              <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
                 <Pagination
                   count={totalPages}
                   page={currentPage}
                   onChange={(_, value) => setCurrentPage(value)}
-                  color="primary"
+                  sx={{
+                    "& .MuiPaginationItem-root.Mui-selected": {
+                      backgroundColor: "#029739",
+                      color: "#ffffff",
+                      "&:hover": {
+                        backgroundColor: "#15803d",
+                      },
+                    },
+                  }}
                 />
               </Box>
             )}
@@ -222,41 +251,68 @@ const Sent = ({ open, setOpen }) => {
         )}
       </Box>
 
+      {/* MODAL NUEVA SOLICITUD (HOMOLOGADO A ADDPRODUCTMODAL) */}
       <Dialog
         open={open}
-        onClose={() => setOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: "40px" } }}
+        onClose={enviando ? undefined : handleModalClose}
+        PaperProps={{
+          sx: {
+            borderRadius: "12px",
+            width: "100%",
+            maxWidth: "576px",
+            margin: "16px",
+            boxShadow: "0px 8px 24px rgba(0, 0, 0, 0.1)",
+            overflow: "hidden",
+          },
+        }}
       >
-        <DialogContent sx={{ padding: "40px" }}>
-          <Typography variant="h4" fontWeight="bold" mb={1}>
+        {/* MODAL HEADER */}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            padding: "32px 40px 24px 24px",
+            gap: "8px",
+            boxSizing: "border-box",
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 700,
+              fontSize: "24px",
+              color: "#171717",
+              lineHeight: 1.2,
+            }}
+          >
             Nueva solicitud
           </Typography>
+        </Box>
 
-          <Typography color="text.secondary" mb={4}>
-            Completa la información para solicitar productos de otra sucursal.
-          </Typography>
-
-          <Typography variant="subtitle2" mb={1}>
-            Sucursal destino
-          </Typography>
-
+        {/* MODAL FORM */}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            padding: "0px 24px 32px 24px",
+            gap: "24px",
+            width: "100%",
+            boxSizing: "border-box",
+          }}
+        >
           <TextField
             select
             fullWidth
+            label="Sucursal destino"
             value={sucursal}
             onChange={(e) => {
               handleSucursalChange(e);
-
-              setErrors((prev) => ({
-                ...prev,
-                sucursal: "",
-              }));
+              setErrors((prev) => ({ ...prev, sucursal: "" }));
             }}
             error={!!errors.sucursal}
             helperText={errors.sucursal}
-            sx={{ marginBottom: 3 }}
+            sx={textFieldStyle}
           >
             {SUCURSALES.filter((s) => s.key !== CURRENT_NODE).map((s) => (
               <MenuItem key={s.key} value={s.key}>
@@ -265,86 +321,108 @@ const Sent = ({ open, setOpen }) => {
             ))}
           </TextField>
 
-          <Box sx={{ display: "flex", gap: 2, marginBottom: 3 }}>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="subtitle2" mb={1}>
-                Producto
-              </Typography>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "1.5fr 1fr",
+              gap: "16px",
+              width: "100%",
+            }}
+          >
+            <TextField
+              select
+              fullWidth
+              label="Producto"
+              value={productoId}
+              onChange={(e) => {
+                setProductoId(e.target.value);
+                setErrors((prev) => ({ ...prev, producto: "" }));
+              }}
+              error={!!errors.producto}
+              helperText={errors.producto}
+              disabled={loadingProductos || !sucursal}
+              sx={textFieldStyle}
+            >
+              {loadingProductos ? (
+                <MenuItem disabled>Cargando...</MenuItem>
+              ) : (
+                productosSucursal.map((p) => (
+                  <MenuItem key={p.id} value={p.id}>
+                    {p.nombre} ({p.cantidad} {p.unit})
+                  </MenuItem>
+                ))
+              )}
+            </TextField>
 
-              <TextField
-                select
-                fullWidth
-                value={productoId}
-                onChange={(e) => {
-                  setProductoId(e.target.value);
-
-                  setErrors((prev) => ({
-                    ...prev,
-                    producto: "",
-                  }));
-                }}
-                error={!!errors.producto}
-                helperText={errors.producto}
-                disabled={loadingProductos || !sucursal}
-              >
-                {loadingProductos ? (
-                  <MenuItem disabled>Cargando...</MenuItem>
-                ) : (
-                  productosSucursal.map((p) => (
-                    <MenuItem key={p.id} value={p.id}>
-                      {p.nombre} — {p.cantidad} {p.unit} disponibles
-                    </MenuItem>
-                  ))
-                )}
-              </TextField>
-            </Box>
-
-            <Box sx={{ width: "180px" }}>
-              <Typography variant="subtitle2" mb={1}>
-                Cantidad
-              </Typography>
-
-              <TextField
-                type="number"
-                fullWidth
-                value={cantidad}
-                onChange={(e) => {
-                  setCantidad(e.target.value);
-
-                  setErrors((prev) => ({
-                    ...prev,
-                    cantidad: "",
-                  }));
-                }}
-                error={!!errors.cantidad}
-                helperText={errors.cantidad}
-                inputProps={{ min: 1 }}
-              />
-            </Box>
+            <TextField
+              type="number"
+              fullWidth
+              label="Cantidad"
+              value={cantidad}
+              onChange={(e) => {
+                setCantidad(e.target.value);
+                setErrors((prev) => ({ ...prev, cantidad: "" }));
+              }}
+              error={!!errors.cantidad}
+              helperText={errors.cantidad}
+              inputProps={{ min: 1 }}
+              sx={textFieldStyle}
+            />
           </Box>
 
-          <Box sx={{ display: "flex", gap: 2 }}>
+          {/* BOTONES DE ACCIÓN */}
+          <Box
+            sx={{
+              display: "flex",
+              gap: "16px",
+              width: "100%",
+              marginTop: 1,
+            }}
+          >
             <Button
               fullWidth
               variant="outlined"
-              onClick={() => setOpen(false)}
-              sx={{ borderRadius: 3, textTransform: "none", paddingY: 1.5 }}
+              onClick={handleModalClose}
+              disabled={enviando}
+              sx={{
+                borderRadius: "12px",
+                paddingY: 1.2,
+                textTransform: "none",
+                fontWeight: 400,
+                borderColor: "#E7E5E4",
+                color: "#44403C",
+                "&:hover": {
+                  borderColor: "#A8A29E",
+                  backgroundColor: "#F5F5F4",
+                },
+              }}
             >
               Cancelar
             </Button>
 
-            <Button
+            <LoadingButton
               fullWidth
               variant="contained"
-              color="warning"
+              loading={enviando}
+              disabled={enviando}
               onClick={handleEnviar}
-              disabled={enviando || !sucursal || !productoId || !cantidad}
-              sx={{ borderRadius: 3, textTransform: "none", paddingY: 1.5 }}
+              sx={{
+                borderRadius: "12px",
+                paddingY: 1.2,
+                textTransform: "none",
+                fontWeight: 600,
+                backgroundColor: "#029739",
+                boxShadow: "none",
+                "&:hover": {
+                  backgroundColor: "#15803d",
+                  boxShadow: "none",
+                },
+              }}
             >
-              {enviando ? "Enviando..." : "Enviar Solicitud"}
-            </Button>
+              Enviar solicitud
+            </LoadingButton>
           </Box>
-        </DialogContent>
+        </Box>
       </Dialog>
     </>
   );

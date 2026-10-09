@@ -140,8 +140,6 @@ const NetworkInventory = () => {
   return (
     <MainLayout>
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
-        
-        {/* 1. HEADER SECTION */}
         <Box
           sx={{
             display: "flex",
@@ -168,7 +166,6 @@ const NetworkInventory = () => {
           />
         </Box>
 
-        {/* 2. SEARCHBAR FRAME */}
         <Box sx={{ width: "100%" }}>
           <SearchBar
             placeholder="Buscar productos"
@@ -208,7 +205,6 @@ const NetworkInventory = () => {
           </Box>
         )}
 
-        {/* 3. INVENTORY CARD WRAPPER */}
         <Paper
           sx={{
             padding: "24px",

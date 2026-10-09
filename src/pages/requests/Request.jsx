@@ -1,8 +1,9 @@
 import { useState } from "react";
-import Sidebar from "../../components/layout/Sidebar";
-import { Box, Button, Badge } from "@mui/material";
-import InboxOutlinedIcon from "@mui/icons-material/InboxOutlined";
-import DetailsIcon from "@mui/icons-material/Details";
+import MainLayout from "../../components/layout/MainLayout";
+import { Box, Typography, Button } from "@mui/material";
+import MailIcon from "@mui/icons-material/Mail";
+import SendIcon from "@mui/icons-material/Send";
+import AddIcon from "@mui/icons-material/Add";
 import Sent from "./Sent";
 import Received from "./Received";
 
@@ -11,98 +12,116 @@ const Request = () => {
   const [open, setOpen] = useState(false);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        backgroundColor: "#F9FAFB",
-        minHeight: "100vh",
-      }}
-    >
-      <Sidebar />
-
-      <div
-        style={{
-          padding: "40px",
-          flex: 1,
-          height: "100vh",
-          overflowY: "auto",
-          boxSizing: "border-box",
-        }}
+    <MainLayout>
+      <Box
+        sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}
       >
-        <h1 style={{ fontSize: "48px", marginBottom: "30px" }}>Solicitudes</h1>
+        {/* TÍTULO */}
+        <Typography variant="h4" sx={{ fontWeight: 700, color: "#171717" }}>
+          Solicitudes
+        </Typography>
 
+        {/* CONTENEDOR DE PESTAÑAS Y BOTÓN NUEVA SOLICITUD */}
         <Box
           sx={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 4,
+            width: "100%",
           }}
         >
-          <Box sx={{ display: "flex", gap: 2 }}>
+          {/* Pestañas Recibidas / Enviadas */}
+          <Box sx={{ display: "flex", gap: 1.5 }}>
             <Button
               onClick={() => setSelected("received")}
-              startIcon={<InboxOutlinedIcon />}
+              startIcon={<MailIcon />}
               sx={{
                 backgroundColor:
-                  selected === "received" ? "#ffffff" : "transparent",
-                color: selected === "received" ? "#111827" : "#6b7280",
-                borderRadius: 4,
-                paddingX: 3,
-                paddingY: 1.5,
-                textTransform: "none",
-                fontWeight: 700,
-                fontSize: "18px",
+                  selected === "received" ? "#FFFFFF" : "transparent",
+                color: selected === "received" ? "#171717" : "#737373",
+                border:
+                  selected === "received"
+                    ? "1px solid #E7E5E4"
+                    : "1px solid transparent",
                 boxShadow:
                   selected === "received"
-                    ? "0px 2px 8px rgba(0,0,0,0.08)"
+                    ? "0px 1px 2px rgba(0, 0, 0, 0.05)"
                     : "none",
-                "&:hover": { backgroundColor: "#ffffff" },
+                borderRadius: "12px",
+                paddingX: "24px",
+                paddingY: "12px",
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "14px",
+                "&:hover": {
+                  backgroundColor: "#FFFFFF",
+                },
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                Recibidas
-              </Box>
+              Recibidas
             </Button>
 
             <Button
               onClick={() => setSelected("sent")}
-              startIcon={<DetailsIcon />}
+              startIcon={<SendIcon />}
               sx={{
                 backgroundColor:
-                  selected === "sent" ? "#ffffff" : "transparent",
-                color: selected === "sent" ? "#111827" : "#6b7280",
-                borderRadius: 4,
-                paddingX: 3,
-                paddingY: 1.5,
-                textTransform: "none",
-                fontWeight: 700,
-                fontSize: "18px",
+                  selected === "sent" ? "#FFFFFF" : "transparent",
+                color: selected === "sent" ? "#171717" : "#737373",
+                border:
+                  selected === "sent"
+                    ? "1px solid #E7E5E4"
+                    : "1px solid transparent",
                 boxShadow:
-                  selected === "sent" ? "0px 2px 8px rgba(0,0,0,0.08)" : "none",
-                "&:hover": { backgroundColor: "#ffffff" },
+                  selected === "sent"
+                    ? "0px 1px 2px rgba(0, 0, 0, 0.05)"
+                    : "none",
+                borderRadius: "12px",
+                paddingX: "24px",
+                paddingY: "12px",
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "14px",
+                "&:hover": {
+                  backgroundColor: "#FFFFFF",
+                },
               }}
             >
               Enviadas
             </Button>
           </Box>
 
+          {/* Botón Nueva Solicitud (Solo visible en 'sent') */}
           {selected === "sent" && (
             <Button
               variant="contained"
-              color="warning"
+              startIcon={<AddIcon />}
               onClick={() => setOpen(true)}
-              sx={{ borderRadius: 3, textTransform: "none", paddingX: 3 }}
+              sx={{
+                backgroundColor: "#029739",
+                color: "#FFFFFF",
+                borderRadius: "12px",
+                textTransform: "none",
+                fontWeight: 600,
+                paddingX: "24px",
+                paddingY: "10px",
+                boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.05)",
+                "&:hover": {
+                  backgroundColor: "#15803d",
+                  boxShadow: "none",
+                },
+              }}
             >
-              + Nueva solicitud
+              Nueva solicitud
             </Button>
           )}
         </Box>
 
+        {/* VISTAS */}
         {selected === "received" && <Received />}
         {selected === "sent" && <Sent open={open} setOpen={setOpen} />}
-      </div>
-    </div>
+      </Box>
+    </MainLayout>
   );
 };
 

@@ -266,7 +266,7 @@ const Dashboard = () => {
                   <Typography
                     sx={{
                       fontWeight: 700,
-                      color: "#E11D48",
+                      color: "#DC2626",
                     }}
                   >
                     {p.cantidad} {p.unit || "kg"}
