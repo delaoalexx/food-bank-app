@@ -6,9 +6,9 @@ import React, {
   useCallback,
 } from "react";
 import { Box, Typography, Pagination, Skeleton, Chip } from "@mui/material";
-import Sidebar from "../components/layout/Sidebar";
-import InfoPanel from "../components/dashboard/InfoPanel";
+import MainLayout from "../components/layout/MainLayout";
 import HistoryCard from "../components/history/HistoryCard";
+import EmptyState from "../components/common/EmptyState";
 import {
   VolunteerActivism,
   Inventory2,
@@ -39,19 +39,19 @@ const resolveIcon = (iconType) => {
     case "donacion":
       return {
         icon: <VolunteerActivism />,
-        iconBg: "#DCFCE7",
-        iconColor: "#16A34A",
+        iconBg: "#fff4ed",
+        iconColor: "#FA7B0A",
       };
     case "entrega":
-      return { icon: <Inventory2 />, iconBg: "#FEF3C7", iconColor: "#D97706" };
+      return { icon: <Inventory2 />, iconBg: "#fff4ed", iconColor: "#FA7B0A" };
     case "recibida":
       return {
         icon: <CallReceived />,
-        iconBg: "#EDE9FE",
-        iconColor: "#7C3AED",
+        iconBg: "#fff4ed",
+        iconColor: "#FA7B0A",
       };
     case "enviada":
-      return { icon: <CallMade />, iconBg: "#DBEAFE", iconColor: "#2563EB" };
+      return { icon: <CallMade />, iconBg: "#fff4ed", iconColor: "#FA7B0A" };
     default:
       return { icon: <HistoryIcon />, iconBg: "#F3F4F6", iconColor: "#6B7280" };
   }
@@ -91,7 +91,6 @@ const History = () => {
       const historialEntregas = entregas.map((e) => ({
         type: "Entregas",
         title: "Entrega realizada",
-
         iconType: "entrega",
         details: [
           `Producto: ${e.producto?.nombre ?? "Sin producto"}`,
@@ -112,7 +111,6 @@ const History = () => {
 
       const historialTransferencias = todasTransferencias.map((t) => {
         const currentNode = CURRENT_NODE.toLowerCase();
-
         const yoEnvie = t.destino?.toLowerCase() === currentNode;
 
         const estadoRaw = (t.aprobacion || t.estado || "").toUpperCase();
@@ -121,11 +119,9 @@ const History = () => {
         return {
           type: "Solicitudes",
           iconType: yoEnvie ? "enviada" : "recibida",
-
           title: yoEnvie
             ? `Solicitud enviada a ${t.origen}`
             : `Solicitud recibida de ${t.destino}`,
-
           details: [
             `Producto: ${t.producto_nombre}`,
             `Cantidad: ${t.cantidad}`,
@@ -177,26 +173,43 @@ const History = () => {
   ];
 
   return (
-    <Box sx={{ display: "flex", height: "100vh" }}>
-      <Sidebar />
+    <MainLayout>
       <Box
         sx={{
-          flexGrow: 1,
-          padding: { xs: 2, sm: 3, md: 4 },
-          backgroundColor: "#F9FAFB",
-          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: 2.5,
+          width: "100%",
         }}
       >
-        <Typography
-          variant="h4"
-          sx={{ fontWeight: "bold", marginBottom: 4, color: "#171717" }}
-        >
+        {/* 1. HEADER */}
+        <Typography variant="h4" sx={{ fontWeight: 700, color: "#171717" }}>
           Historial
         </Typography>
 
-        <Box sx={{ display: "grid", gap: 3 }}>
-          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-            {filters.map((item) => (
+        {/* 2. FILTROS MISMA DIMENSIÓN */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            flexWrap: "wrap",
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: "14px",
+              fontWeight: 500,
+              color: "#737373",
+              mr: 0.5,
+            }}
+          >
+            Filtrar por:
+          </Typography>
+
+          {filters.map((item) => {
+            const isActive = filter === item.label;
+            return (
               <Chip
                 key={item.label}
                 icon={item.icon}
@@ -207,114 +220,131 @@ const History = () => {
                   setCurrentPage(1);
                 }}
                 sx={{
-                  height: 42,
-                  borderRadius: "14px",
+                  height: "40px",
+                  minWidth: "130px", // Misma dimensión exacta para todos los botones
+                  justifyContent: "center",
+                  borderRadius: "12px",
                   fontWeight: 600,
                   fontSize: "14px",
                   transition: "0.2s ease",
-                  backgroundColor:
-                    filter === item.label ? "#F97316" : "#F5F5F4",
-                  color: filter === item.label ? "#FFFFFF" : "#525252",
-                  border:
-                    filter === item.label
-                      ? "1px solid #F97316"
-                      : "1px solid #E7E5E4",
+                  backgroundColor: isActive ? "#029739" : "#FFFFFF",
+                  color: isActive ? "#FFFFFF" : "#525252",
+                  border: isActive ? "1px solid #029739" : "1px solid #E7E5E4",
+                  boxShadow: isActive
+                    ? "0px 1px 2px rgba(0, 0, 0, 0.05)"
+                    : "none",
                   "& .MuiChip-icon": {
-                    color: filter === item.label ? "#FFFFFF" : "#737373",
+                    color: isActive ? "#FFFFFF" : "#737373",
                     fontSize: "18px",
-                    marginLeft: "6px",
                   },
                   "&:hover": {
-                    transform: "translateY(-1px)",
-                    backgroundColor:
-                      filter === item.label ? "#EA580C" : "#EEEEEE",
+                    backgroundColor: isActive ? "#15803d" : "#F5F5F4",
                   },
                 }}
               />
-            ))}
+            );
+          })}
+        </Box>
+
+        {/* 3. LISTA DIRECTA SIN TARJETA (CARD) */}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            width: "100%",
+            marginTop: 1,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
+            <HistoryIcon sx={{ color: "#171717", fontSize: 22 }} />
+            <Typography
+              sx={{ fontWeight: 700, fontSize: "20px", color: "#171717" }}
+            >
+              Actividad reciente
+            </Typography>
           </Box>
 
-          <InfoPanel
-            title="Actividad reciente"
-            scrollable={false}
-            icon={<HistoryIcon sx={{ color: "#7C3AED" }} />}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              {loading && !hasLoaded ? (
-                [...Array(5)].map((_, index) => (
-                  <Box
-                    key={index}
-                    sx={{
-                      mb: 3,
-                      pb: 3,
-                      borderBottom: index !== 4 ? "1px solid #E7E5E4" : "none",
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        gap: 2,
-                      }}
-                    >
-                      <Skeleton variant="rounded" width={64} height={64} />
-
-                      <Box sx={{ flex: 1 }}>
-                        <Skeleton width="40%" height={32} />
-
-                        <Skeleton width="60%" height={24} />
-
-                        <Skeleton width="50%" height={24} />
-
-                        <Skeleton width="35%" height={24} />
-                      </Box>
-
-                      <Skeleton width={120} height={40} />
+          <Box sx={{ display: "flex", flexDirection: "column" }}>
+            {loading && !hasLoaded ? (
+              [...Array(5)].map((_, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    mb: 3,
+                    pb: 3,
+                    borderBottom: index !== 4 ? "1px solid #E7E5E4" : "none",
+                  }}
+                >
+                  <Box sx={{ display: "flex", gap: 2 }}>
+                    <Skeleton
+                      variant="rounded"
+                      width={64}
+                      height={64}
+                      sx={{ borderRadius: "12px" }}
+                    />
+                    <Box sx={{ flex: 1 }}>
+                      <Skeleton width="40%" height={32} />
+                      <Skeleton width="60%" height={24} />
+                      <Skeleton width="50%" height={24} />
                     </Box>
                   </Box>
-                ))
-              ) : currentItems.length === 0 ? (
-                <Typography color="text.secondary">
-                  Sin actividad reciente.
-                </Typography>
-              ) : (
-                currentItems.map((item, index) => {
-                  const { icon, iconBg, iconColor } = resolveIcon(
-                    item.iconType,
-                  );
-
-                  return (
-                    <HistoryCard
-                      key={`${item.type}-${item.date}-${index}`}
-                      {...item}
-                      icon={icon}
-                      iconBg={iconBg}
-                      iconColor={iconColor}
-                      isLast={index === currentItems.length - 1}
-                    />
-                  );
-                })
-              )}
-            </Box>
-
-            {totalPages > 1 && (
-              <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                <Pagination
-                  count={totalPages}
-                  page={currentPage}
-                  onChange={(_, value) => setCurrentPage(value)}
-                  color="primary"
+                </Box>
+              ))
+            ) : currentItems.length === 0 ? (
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  py: 8,
+                }}
+              >
+                <EmptyState
+                  icon={HistoryIcon}
+                  title="Sin actividad reciente"
+                  description="No se ha realizado ninguna actividad por el momento.
+"
                 />
               </Box>
+            ) : (
+              currentItems.map((item, index) => {
+                const { icon, iconBg, iconColor } = resolveIcon(item.iconType);
+
+                return (
+                  <HistoryCard
+                    key={`${item.type}-${item.date}-${index}`}
+                    {...item}
+                    icon={icon}
+                    iconBg={iconBg}
+                    iconColor={iconColor}
+                    isLast={index === currentItems.length - 1}
+                  />
+                );
+              })
             )}
-          </InfoPanel>
+          </Box>
+
+          {totalPages > 1 && (
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+              <Pagination
+                count={totalPages}
+                page={currentPage}
+                onChange={(_, value) => setCurrentPage(value)}
+                sx={{
+                  "& .MuiPaginationItem-root.Mui-selected": {
+                    backgroundColor: "#029739",
+                    color: "#ffffff",
+                    "&:hover": {
+                      backgroundColor: "#15803d",
+                    },
+                  },
+                }}
+              />
+            </Box>
+          )}
         </Box>
       </Box>
-    </Box>
+    </MainLayout>
   );
 };
 

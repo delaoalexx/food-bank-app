@@ -1,8 +1,24 @@
-import { useState, useEffect } from "react";
-import {Box,Button,Typography,Dialog,DialogContent,TextField,MenuItem,IconButton,CircularProgress,Alert,} from "@mui/material";
+import React, { useState, useEffect } from "react";
+import {
+  Dialog,
+  Typography,
+  Box,
+  TextField,
+  MenuItem,
+  IconButton,
+  Button,
+  Alert,
+} from "@mui/material";
+import LoadingButton from "@mui/lab/LoadingButton";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutlined";
 import AddIcon from "@mui/icons-material/Add";
 import { getProducts, createEntrega } from "../../services/api";
+
+const textFieldStyle = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+  },
+};
 
 const DeliveryForm = ({ open, setOpen, family, onSuccess }) => {
   const [renglones, setRenglones] = useState([
@@ -12,11 +28,13 @@ const DeliveryForm = ({ open, setOpen, family, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (!open) return;
     setError(null);
     setSuccess(false);
+    setErrors({});
     getProducts().then((data) => {
       const mapped = data.map((p) => ({
         id: p.id,
@@ -34,61 +52,68 @@ const DeliveryForm = ({ open, setOpen, family, onSuccess }) => {
 
   const handleRemoveRenglon = (index) => {
     setRenglones(renglones.filter((_, i) => i !== index));
+    setErrors((prev) => {
+      const copy = { ...prev };
+      delete copy[`prod_${index}`];
+      delete copy[`cant_${index}`];
+      return copy;
+    });
   };
 
   const handleChangeRenglon = (index, field, value) => {
     const updated = [...renglones];
     updated[index][field] = value;
     setRenglones(updated);
+
+    // Limpiar errores individuales al escribir
+    setErrors((prev) => ({
+      ...prev,
+      [`${field === "productoId" ? "prod" : "cant"}_${index}`]: "",
+    }));
   };
 
   const productosUsados = renglones.map((r) => r.productoId).filter(Boolean);
   const getProducto = (id) => productos.find((p) => p.id === Number(id));
 
   const handleClose = () => {
+    if (loading) return;
     setRenglones([{ productoId: "", cantidad: "" }]);
     setError(null);
     setSuccess(false);
+    setErrors({});
     setOpen(false);
   };
 
   const handleSubmit = async () => {
-    if (!family?.id) {
-      return setError("No hay familia seleccionada.");
-    }
+    if (!family?.id) return setError("No hay familia seleccionada.");
+    if (productos.length === 0)
+      return setError("No hay productos disponibles.");
 
-    if (productos.length === 0) {
-      return setError(
-        "No hay productos disponibles para registrar la entrega.",
-      );
-    }
+    const newErrors = {};
 
-    if (renglones.some((r) => !r.productoId || r.cantidad === "")) {
-      return setError("Completa todos los productos y cantidades.");
-    }
+    renglones.forEach((r, idx) => {
+      if (!r.productoId) {
+        newErrors[`prod_${idx}`] = "Selecciona un producto";
+      }
 
-    if (
-      renglones.some(
-        (r) => isNaN(Number(r.cantidad)) || Number(r.cantidad) <= 0,
-      )
-    ) {
-      return setError("Todas las cantidades deben ser mayores a 0.");
-    }
-
-    if (renglones.some((r) => !Number.isInteger(Number(r.cantidad)))) {
-      return setError("Las cantidades deben ser números enteros.");
-    }
-
-    const excedeStock = renglones.some((r) => {
-      const producto = getProducto(r.productoId);
-
-      return producto && Number(r.cantidad) > producto.stock;
+      if (!r.cantidad) {
+        newErrors[`cant_${idx}`] = "Ingresa cantidad";
+      } else if (isNaN(Number(r.cantidad)) || Number(r.cantidad) <= 0) {
+        newErrors[`cant_${idx}`] = "La cantidad debe ser mayor a 0";
+      } else {
+        const producto = getProducto(r.productoId);
+        if (producto && Number(r.cantidad) > producto.stock) {
+          newErrors[`cant_${idx}`] = `Excede stock (${producto.stock})`;
+        }
+      }
     });
 
-    if (excedeStock) {
-      return setError("Una o más cantidades exceden el stock disponible.");
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
     }
 
+    setErrors({});
     setLoading(true);
     setError(null);
 
@@ -103,215 +128,245 @@ const DeliveryForm = ({ open, setOpen, family, onSuccess }) => {
         ),
       );
 
-      if (resultados.some((r) => r === null)) {
-        return setError("Error al registrar una o más entregas.");
-      }
+      if (resultados.some((r) => r === null))
+        return setError("Error al registrar la entrega.");
 
       setSuccess(true);
       onSuccess?.();
-
-      setTimeout(() => {
-        handleClose();
-      }, 1200);
+      setTimeout(handleClose, 800);
     } catch {
       setError("Error al registrar la entrega.");
     } finally {
       setLoading(false);
     }
   };
+
   return (
     <Dialog
       open={open}
-      onClose={handleClose}
-      maxWidth="sm"
+      onClose={loading ? undefined : handleClose}
       fullWidth
-      PaperProps={{ sx: { borderRadius: "24px" } }}
+      maxWidth="sm"
+      PaperProps={{
+        sx: {
+          borderRadius: "12px",
+          width: "100%",
+          maxWidth: "576px",
+          margin: "16px",
+          boxShadow: "0px 8px 24px rgba(0, 0, 0, 0.1)",
+          overflow: "hidden",
+        },
+      }}
     >
-      <DialogContent sx={{ padding: "40px", marginBottom: 2 }}>
-        <Typography variant="h5" fontWeight="bold" mb={0.5}>
+      {/* 1. MODAL HEADER */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          padding: "32px 40px 24px 24px",
+          gap: "4px",
+          boxSizing: "border-box",
+        }}
+      >
+        <Typography
+          sx={{
+            fontWeight: 700,
+            fontSize: "24px",
+            color: "#171717",
+            lineHeight: 1.2,
+          }}
+        >
           Nueva entrega
         </Typography>
-        <Typography color="text.secondary" fontSize="14px" mb={3}>
-          {family?.name}
+        <Typography sx={{ fontSize: "14px", color: "#737373" }}>
+          {family?.nombre || family?.name}
         </Typography>
+      </Box>
 
+      {/* 2. MODAL FORM */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          padding: "0px 24px 32px 24px",
+          gap: "20px",
+          width: "100%",
+          boxSizing: "border-box",
+        }}
+      >
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <Alert severity="error" sx={{ width: "100%", borderRadius: "12px" }}>
             {error}
           </Alert>
         )}
         {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
+          <Alert
+            severity="success"
+            sx={{ width: "100%", borderRadius: "12px" }}
+          >
             ¡Entrega registrada!
           </Alert>
         )}
 
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{
-            letterSpacing: 1,fontSize:"15px"
-          }}
-        >
-          Fecha de entrega
-        </Typography>
-
         <TextField
           fullWidth
-          value={new Date().toLocaleDateString("es-MX")}
+          label="Fecha de entrega"
+          value={new Date().toISOString().split("T")[0]}
           disabled
-          sx={{ marginTop: 1, marginBottom: 3 }}
+          sx={textFieldStyle}
         />
-
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ letterSpacing: 1 ,fontSize:"15px" }}
-        >
-          Productos
-        </Typography>
 
         <Box
           sx={{
-            marginTop: 1,
-            marginBottom: 1,
+            width: "100%",
             display: "flex",
             flexDirection: "column",
-            gap: 2,
+            gap: "12px",
           }}
         >
+          <Typography
+            sx={{ fontSize: "14px", fontWeight: 600, color: "#171717" }}
+          >
+            Productos
+          </Typography>
+
           {renglones.map((renglon, index) => {
-            const productoSeleccionado = getProducto(renglon.productoId);
-            const cantidadNum = Number(renglon.cantidad);
-            const excede =
-              productoSeleccionado && cantidadNum > productoSeleccionado.stock;
+            const prodError = errors[`prod_${index}`];
+            const cantError = errors[`cant_${index}`];
 
             return (
               <Box
                 key={index}
-                sx={{ display: "flex", gap: 1.5, alignItems: "flex-start" }}
+                sx={{
+                  display: "flex",
+                  gap: "16px",
+                  alignItems: "flex-start",
+                  width: "100%",
+                }}
               >
-                <Box sx={{ flex: 1 }}>
-                  <TextField
-                    select
-                    fullWidth
-                    value={renglon.productoId}
-                    onChange={(e) =>
-                      handleChangeRenglon(index, "productoId", e.target.value)
-                    }
-                  >
-                    <MenuItem value="" disabled>
-                      Seleccionar
-                    </MenuItem>
-                    {productos.map((p) => (
-                      <MenuItem
-                        key={p.id}
-                        value={p.id}
-                        disabled={
-                          productosUsados.includes(p.id) &&
-                          renglon.productoId !== p.id
-                        }
+                <TextField
+                  select
+                  fullWidth
+                  label="Producto"
+                  value={renglon.productoId}
+                  onChange={(e) =>
+                    handleChangeRenglon(index, "productoId", e.target.value)
+                  }
+                  error={!!prodError}
+                  helperText={prodError}
+                  sx={{ flex: 1, ...textFieldStyle }}
+                >
+                  {productos.map((p) => (
+                    <MenuItem
+                      key={p.id}
+                      value={p.id}
+                      disabled={
+                        productosUsados.includes(p.id) &&
+                        renglon.productoId !== p.id
+                      }
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          width: "100%",
+                        }}
                       >
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            width: "100%",
-                          }}
+                        <span>{p.name}</span>
+                        <Typography
+                          component="span"
+                          fontSize="12px"
+                          color="text.secondary"
                         >
-                          <span>{p.name}</span>
-                          <Typography
-                            component="span"
-                            fontSize="12px"
-                            color="text.secondary"
-                            sx={{ marginLeft: 2 }}
-                          >
-                            disponible: {p.stock} {p.unit}
-                          </Typography>
-                        </Box>
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                  {excede && (
-                    <Typography fontSize="12px" color="error" mt={0.5}>
-                      Excede el stock disponible ({productoSeleccionado.stock}{" "}
-                      {productoSeleccionado.unit})
-                    </Typography>
-                  )}
-                </Box>
+                          Disp: {p.stock} {p.unit}
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </TextField>
 
-                <Box sx={{ width: "110px" }}>
-                  <TextField
-                    type="number"
-                    fullWidth
-                    placeholder="0"
-                    value={renglon.cantidad}
-                    onChange={(e) =>
-                      handleChangeRenglon(index, "cantidad", e.target.value)
-                    }
-                    error={excede}
-                    inputProps={{
-                      min: 1,
-                      step: 1,
-                    }}
-                  />
-                </Box>
+                <TextField
+                  type="number"
+                  label="Cantidad"
+                  value={renglon.cantidad}
+                  onChange={(e) =>
+                    handleChangeRenglon(index, "cantidad", e.target.value)
+                  }
+                  error={!!cantError}
+                  helperText={cantError}
+                  sx={{ width: "140px", ...textFieldStyle }}
+                  inputProps={{ min: 1 }}
+                />
 
                 <IconButton
                   onClick={() => handleRemoveRenglon(index)}
                   disabled={renglones.length === 1}
-                  sx={{ marginTop: 0.5, color: "#9ca3af" }}
+                  sx={{ mt: 1, color: "#A3A3A3" }}
                 >
                   <DeleteOutlineIcon />
                 </IconButton>
               </Box>
             );
           })}
+
+          <Button
+            startIcon={<AddIcon />}
+            onClick={handleAddRenglon}
+            sx={{
+              textTransform: "none",
+              color: "#029739",
+              fontWeight: 600,
+              alignSelf: "flex-start",
+            }}
+          >
+            Agregar otro producto
+          </Button>
         </Box>
 
-        <Button
-          startIcon={<AddIcon />}
-          onClick={handleAddRenglon}
-          sx={{
-            textTransform: "none",
-            color: "#e07a2f",
-            paddingLeft: 0,
-            marginBottom: 3,
-            "&:hover": {
-              backgroundColor: "transparent",
-              textDecoration: "underline",
-            },
-          }}
-        >
-          Agregar producto
-        </Button>
-
-        <Box sx={{ display: "flex", gap: 2 }}>
+        {/* 3. BOTONES DE ACCIÓN */}
+        <Box sx={{ display: "flex", gap: "16px", width: "100%", mt: 1 }}>
           <Button
             fullWidth
             variant="outlined"
             onClick={handleClose}
             disabled={loading}
-            sx={{ borderRadius: 3, textTransform: "none", paddingY: 1.5 }}
+            sx={{
+              borderRadius: "12px",
+              paddingY: 1.2,
+              textTransform: "none",
+              fontWeight: 400,
+              borderColor: "#E7E5E4",
+              color: "#44403C",
+            }}
           >
             Cancelar
           </Button>
-          <Button
+
+          <LoadingButton
             fullWidth
             variant="contained"
-            color="warning"
-            onClick={handleSubmit}
+            loading={loading}
             disabled={loading}
-            sx={{ borderRadius: 3, textTransform: "none", paddingY: 1.5 }}
+            onClick={handleSubmit}
+            sx={{
+              borderRadius: "12px",
+              paddingY: 1.2,
+              textTransform: "none",
+              fontWeight: 600,
+              backgroundColor: "#029739",
+              boxShadow: "none",
+              "&:hover": {
+                backgroundColor: "#15803d",
+                boxShadow: "none",
+              },
+            }}
           >
-            {loading ? (
-              <CircularProgress size={22} color="inherit" />
-            ) : (
-              "Registrar entrega"
-            )}
-          </Button>
+            Registrar Entrega
+          </LoadingButton>
         </Box>
-      </DialogContent>
+      </Box>
     </Dialog>
   );
 };

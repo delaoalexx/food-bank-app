@@ -25,15 +25,19 @@ const HistoryCard = ({
     switch (statusUpper) {
       case "ACEPTADO":
       case "APROBADO":
-        return { bg: "#DCFCE7", text: "#16A34A" };
+        return { bg: "#DCFCE7", text: "#029739", label: "ACEPTADO" };
       case "DENEGADO":
       case "RECHAZADO":
-        return { bg: "#FEE2E2", text: "#DC2626" };
+        return { bg: "#FEE2E2", text: "#DC2626", label: "DENEGADO" };
       case "EN ESPERA":
       case "PENDIENTE":
-        return { bg: "#FEF9C3", text: "#854D0E" };
+        return { bg: "#FEFCE8", text: "#EAB308", label: "EN ESPERA" };
       default:
-        return { bg: "#F3F4F6", text: "#6B7280" };
+        return {
+          bg: "#F3F4F6",
+          text: "#6B7280",
+          label: String(status || "").toUpperCase(),
+        };
     }
   };
 
@@ -95,6 +99,7 @@ const HistoryCard = ({
               sx={{
                 backgroundColor: getStatusStyles().bg,
                 color: getStatusStyles().text,
+                border: `1px solid ${getStatusStyles().text}33`,
                 fontWeight: 600,
                 borderRadius: 2,
                 "& .MuiChip-label": { paddingX: 1.5 },

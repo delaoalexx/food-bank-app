@@ -1,118 +1,279 @@
-import { useState } from "react";
-import { Box, Typography, Button, Chip, Collapse } from "@mui/material";
-import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
-import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
-import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
+import React, { useState } from "react";
+import {
+  Box,
+  Typography,
+  Button,
+  Collapse,
+  IconButton,
+  Pagination,
+} from "@mui/material";
+import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
+import Inventory2Icon from "@mui/icons-material/Inventory2";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 
 const BeneficiaryCard = ({ family, onNuevaEntrega }) => {
   const [expanded, setExpanded] = useState(false);
+  const [historyPage, setHistoryPage] = useState(1);
+  const itemsPerPage = 3;
+
+  const historyItems = family.history || family.entregas || [];
+  const startIndex = (historyPage - 1) * itemsPerPage;
+  const currentHistory = historyItems.slice(
+    startIndex,
+    startIndex + itemsPerPage,
+  );
+  const totalHistoryPages = Math.ceil(historyItems.length / itemsPerPage);
 
   return (
-    <Box sx={{ backgroundColor: "#ffffff", borderRadius: 4, border: "1px solid #e5e7eb", overflow: "hidden" }}>
-      <Box sx={{ display: "flex", alignItems: "center", padding: "16px 24px", gap: 2 }}>
-        <Box sx={{ backgroundColor: "#fff4ed", borderRadius: 3, padding: "10px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <PeopleAltOutlinedIcon sx={{ color: "#e07a2f" }} />
-        </Box>
-
-        <Box sx={{ flex: 1 }}>
-          <Typography fontWeight="bold" fontSize="16px">{family.nombre}</Typography>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <PhoneOutlinedIcon sx={{ fontSize: 14, color: "#6b7280" }} />
-            <Typography fontSize="13px" color="text.secondary">
-              {family.familia?.telefono || "Sin teléfono"}
-            </Typography>
-          </Box>
-        </Box>
-
-        <Box sx={{ display: "flex", alignItems: "center", gap: 3, marginRight: 2 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
-            <PeopleAltOutlinedIcon sx={{ fontSize: 18, color: "#6b7280" }} />
-            <Typography fontSize="14px" color="text.secondary">
-              {family.familia?.cantidad_miembros ?? 0} miembros
-            </Typography>
-          </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
-            <LocalShippingOutlinedIcon sx={{ fontSize: 18, color: "#6b7280" }} />
-            <Typography fontSize="14px" color="text.secondary">
-              {family.entregas?.length ?? 0} entregas
-            </Typography>
-          </Box>
-        </Box>
-
-        <Button
-          variant="contained" color="warning"
-          onClick={() => onNuevaEntrega(family)}
-          sx={{ borderRadius: 3, textTransform: "none", paddingX: 2, marginRight: 1 }}
+    <Box
+      sx={{
+        backgroundColor: "#FFFFFF",
+        borderRadius: "12px",
+        border: "1px solid #E5E7EB",
+        boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.05)",
+        overflow: "hidden",
+        width: "100%",
+      }}
+    >
+      {/* HEADER FILA PRINCIPAL */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "20px 24px",
+          gap: 2,
+        }}
+      >
+        <Typography
+          sx={{
+            fontWeight: 700,
+            fontSize: "18px",
+            color: "#1F2937",
+          }}
         >
-          Nueva entrega
-        </Button>
-        <Box onClick={() => setExpanded(!expanded)} sx={{ cursor: "pointer", color: "#6b7280", display: "flex", alignItems: "center" }}>
-          {expanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+          {family.nombre || family.name}
+        </Typography>
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <PeopleAltIcon sx={{ fontSize: 18, color: "#F97316" }} />
+            <Typography
+              sx={{ fontSize: "14px", color: "#1F2937", fontWeight: 400 }}
+            >
+              {family.familia?.cantidad_miembros ?? family.members ?? 0}{" "}
+              miembros
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Inventory2Icon sx={{ fontSize: 18, color: "#F97316" }} />
+            <Typography
+              sx={{ fontSize: "14px", color: "#1F2937", fontWeight: 400 }}
+            >
+              {family.entregas?.length ?? family.deliveries ?? 0} entregas
+            </Typography>
+          </Box>
+
+          <Button
+            variant="contained"
+            onClick={() => onNuevaEntrega(family)}
+            sx={{
+              backgroundColor: "#029739",
+              color: "#FFFFFF",
+              borderRadius: "12px",
+              textTransform: "none",
+              fontWeight: 500,
+              fontSize: "12px",
+              paddingX: "16px",
+              paddingY: "8px",
+              boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.05)",
+              "&:hover": {
+                backgroundColor: "#15803d",
+                boxShadow: "none",
+              },
+            }}
+          >
+            Nueva Entrega
+          </Button>
+
+          <IconButton
+            onClick={() => setExpanded(!expanded)}
+            sx={{ color: "#4B5563" }}
+          >
+            {expanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+          </IconButton>
         </Box>
       </Box>
 
+      {/* CONTENIDO DESPLEGABLE */}
       <Collapse in={expanded}>
-        <Box sx={{ padding: "0 24px 24px", borderTop: "1px solid #f3f4f6" }}>
-          <Box sx={{ display: "flex", gap: 6, marginTop: 2, marginBottom: 3 }}>
+        <Box
+          sx={{
+            padding: "24px",
+            borderTop: "1px solid #F3F4F6",
+            display: "flex",
+            flexDirection: "column",
+            gap: "24px",
+          }}
+        >
+          {/* GRID DE DETALLES */}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: 3,
+            }}
+          >
             <Box>
-              <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", letterSpacing: 1 }}>
-                Dirección
+              <Typography
+                sx={{
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  color: "#9CA3AF",
+                  letterSpacing: "0.5px",
+                  textTransform: "uppercase",
+                  mb: 0.5,
+                }}
+              >
+                DIRECCIÓN
               </Typography>
-              <Typography fontSize="14px" mt={0.5}>
+              <Typography sx={{ fontSize: "14px", color: "#1F2937" }}>
                 {family.familia?.direccion || "Sin dirección"}
               </Typography>
             </Box>
+
             <Box>
-              <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", letterSpacing: 1 }}>
-                Teléfono
+              <Typography
+                sx={{
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  color: "#9CA3AF",
+                  letterSpacing: "0.5px",
+                  textTransform: "uppercase",
+                  mb: 0.5,
+                }}
+              >
+                TELÉFONO
               </Typography>
-              <Typography fontSize="14px" mt={0.5}>
+              <Typography sx={{ fontSize: "14px", color: "#1F2937" }}>
                 {family.familia?.telefono || "Sin teléfono"}
               </Typography>
             </Box>
+
             <Box>
-              <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", letterSpacing: 1 }}>
-                Miembros
+              <Typography
+                sx={{
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  color: "#9CA3AF",
+                  letterSpacing: "0.5px",
+                  textTransform: "uppercase",
+                  mb: 0.5,
+                }}
+              >
+                FECHA DE REGISTRO
               </Typography>
-              <Typography fontSize="14px" mt={0.5}>
-                {family.familia?.cantidad_miembros ?? 0}
+              <Typography sx={{ fontSize: "14px", color: "#1F2937" }}>
+                {family.created_at
+                  ? new Date(family.created_at).toISOString().split("T")[0]
+                  : "2026-01-15"}
               </Typography>
             </Box>
           </Box>
 
-          <Typography variant="caption" fontWeight="bold" sx={{ textTransform: "uppercase", letterSpacing: 1 }}>
-            Historial de Entregas
-          </Typography>
+          {/* HISTORIAL DE ENTREGAS CON PAGINACIÓN DE 3 */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <Typography
+              sx={{
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "#1F2937",
+                letterSpacing: "1.2px",
+                textTransform: "uppercase",
+              }}
+            >
+              HISTORIAL DE ENTREGAS
+            </Typography>
 
-          <Box sx={{ marginTop: 1.5, display: "flex", flexDirection: "column", gap: 1 }}>
-            {family.entregas?.length === 0 && (
-              <Typography fontSize="14px" color="text.secondary">Sin entregas registradas.</Typography>
+            {historyItems.length === 0 ? (
+              <Typography sx={{ fontSize: "14px", color: "#6B7280" }}>
+                Sin entregas registradas.
+              </Typography>
+            ) : (
+              <>
+                {currentHistory.map((e, idx) => (
+                  <Box
+                    key={idx}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      padding: "16px 20px",
+                      gap: "32px",
+                      backgroundColor: "#F9FAFB",
+                      borderRadius: "12px",
+                      width: "100%",
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontSize: "14px",
+                        color: "#1F2937",
+                        fontWeight: 500,
+                      }}
+                    >
+                      {e.date || new Date(e.fecha).toISOString().split("T")[0]}
+                    </Typography>
+
+                    <Box sx={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                      {(
+                        e.items || [
+                          `${e.cantidad} ${e.producto?.unit || "kg"} ${e.producto?.nombre ?? "producto"}`,
+                        ]
+                      ).map((item, itemIdx) => (
+                        <Box
+                          key={itemIdx}
+                          sx={{
+                            backgroundColor: "#F97316",
+                            color: "#FFFFFF",
+                            borderRadius: "50px",
+                            padding: "4px 12px",
+                            fontSize: "12px",
+                            fontWeight: 500,
+                          }}
+                        >
+                          {item}
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                ))}
+
+                {totalHistoryPages > 1 && (
+                  <Box
+                    sx={{ display: "flex", justifyContent: "center", mt: 1 }}
+                  >
+                    <Pagination
+                      count={totalHistoryPages}
+                      page={historyPage}
+                      onChange={(_, value) => setHistoryPage(value)}
+                      size="small"
+                      sx={{
+                        "& .MuiPaginationItem-root.Mui-selected": {
+                          backgroundColor: "#029739",
+                          color: "#ffffff",
+                          "&:hover": {
+                            backgroundColor: "#15803d",
+                          },
+                        },
+                      }}
+                    />
+                  </Box>
+                )}
+              </>
             )}
-            {family.entregas?.map((e, i) => (
-              <Box
-                key={i}
-                sx={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "10px 16px", backgroundColor: "#f9fafb", borderRadius: 2,
-                  cursor: "pointer", "&:hover": { backgroundColor: "#f3f4f6" },
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <Typography fontSize="14px" fontWeight="500">
-                    {new Date(e.fecha).toLocaleDateString("es-MX")}
-                  </Typography>
-                  <Chip
-                    label={`${e.cantidad} ${e.producto?.nombre ?? "producto"}`}
-                    size="small"
-                    sx={{ backgroundColor: "#e8f5e9", color: "#2e7d32", fontSize: "12px" }}
-                  />
-                </Box>
-                <ChevronRightIcon sx={{ color: "#9ca3af", fontSize: 18 }} />
-              </Box>
-            ))}
           </Box>
         </Box>
       </Collapse>

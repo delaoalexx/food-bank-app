@@ -1,44 +1,49 @@
+import React from "react";
 import { Box, Typography } from "@mui/material";
-import CardGiftcardOutlinedIcon from "@mui/icons-material/CardGiftcardOutlined";
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
 
-const DonationHistoryCard = ({ donor, description, date }) => {
+const DonationHistoryCard = ({ donor, description, date, isLast }) => {
   return (
     <Box
       sx={{
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "16px",
-        borderRadius: 3,
-        border: "1px solid #e5e7eb",
-        backgroundColor: "#ffffff",
+        padding: "16px 20px",
+        borderBottom: isLast ? "none" : "1px solid #C6C6C8",
+        width: "100%",
+        boxSizing: "border-box",
       }}
     >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-        <Box
+      {/* Nombre (18px) y Detalle */}
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25 }}>
+        <Typography
           sx={{
-            backgroundColor: "#fff4ed",
-            borderRadius: 3,
-            padding: "10px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            fontWeight: 700,
+            fontSize: "18px", // Tamaño ajustado a 18px
+            color: "#171717",
           }}
         >
-          <CardGiftcardOutlinedIcon sx={{ color: "#e07a2f" }} />
-        </Box>
-        <Box>
-          <Typography fontWeight="bold">{donor}</Typography>
-          <Typography color="text.secondary" fontSize="14px">
-            {description}
-          </Typography>
-        </Box>
+          {donor || "Donante anónimo"}
+        </Typography>
+        <Typography
+          sx={{
+            fontSize: "14px",
+            color: "#737373",
+          }}
+        >
+          {description}
+        </Typography>
       </Box>
 
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "#6b7280" }}>
-        <CalendarTodayOutlinedIcon fontSize="small" />
-        <Typography fontSize="14px">{date}</Typography>
+      {/* Fecha a la derecha */}
+      <Box
+        sx={{ display: "flex", alignItems: "center", gap: 1, color: "#A3A3A3" }}
+      >
+        <CalendarTodayOutlinedIcon sx={{ fontSize: 16 }} />
+        <Typography sx={{ fontSize: "14px", fontWeight: 500 }}>
+          {date}
+        </Typography>
       </Box>
     </Box>
   );

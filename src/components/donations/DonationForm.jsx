@@ -1,18 +1,27 @@
 import { useState, useEffect } from "react";
-import {Dialog,DialogContent,Typography,Box,TextField,Button,MenuItem,Alert,} from "@mui/material";
+import {
+  Dialog,
+  Typography,
+  Box,
+  TextField,
+  Button,
+  MenuItem,
+  Alert,
+} from "@mui/material";
 import LoadingButton from "@mui/lab/LoadingButton";
-import { createCategory, getCategories, createDonacion } from "../../services/api";
-import AddIcon from "@mui/icons-material/Add";
+import { getCategories, createDonacion } from "../../services/api";
+
+const textFieldStyle = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+  },
+};
 
 const DonationForm = ({ open, setOpen, onSuccess }) => {
   const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
-  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
-  const [newCategory, setNewCategory] = useState("");
-  const [categoryLoading, setCategoryLoading] = useState(false);
-  const [categoryError, setCategoryError] = useState("");
   const [errors, setErrors] = useState({});
 
   const [form, setForm] = useState({
@@ -27,6 +36,7 @@ const DonationForm = ({ open, setOpen, onSuccess }) => {
     if (!open) return;
     setError(null);
     setSuccess(false);
+    setErrors({});
     getCategories()
       .then(setCategorias)
       .catch(() => setError("Error al cargar categorías."));
@@ -40,6 +50,7 @@ const DonationForm = ({ open, setOpen, onSuccess }) => {
     setOpen(false);
     setError(null);
     setSuccess(false);
+    setErrors({});
     setForm({
       donante_nombre: "",
       producto_nombre: "",
@@ -50,324 +61,264 @@ const DonationForm = ({ open, setOpen, onSuccess }) => {
   };
 
   const handleSubmit = async () => {
-  if (loading) return;
+    if (loading) return;
 
-  const newErrors = {};
+    const newErrors = {};
 
-  if (!form.donante_nombre.trim()) {
-    newErrors.donante_nombre = "Ingresa el nombre del donante";
-  }
+    if (!form.donante_nombre.trim()) {
+      newErrors.donante_nombre = "Ingresa el nombre del donante";
+    }
 
-  if (!form.producto_nombre.trim()) {
-    newErrors.producto_nombre = "Ingresa el nombre del producto";
-  }
+    if (!form.producto_nombre.trim()) {
+      newErrors.producto_nombre = "Ingresa el nombre del producto";
+    }
 
-  if (!form.cantidad) {
-    newErrors.cantidad = "Ingresa una cantidad";
-  } else if (Number(form.cantidad) <= 0) {
-    newErrors.cantidad = "Debe ser mayor a 0";
-  } else if (!Number.isInteger(Number(form.cantidad))) {
-    newErrors.cantidad = "Solo números enteros";
-  }
+    if (!form.categoria_id) {
+      newErrors.categoria_id = "Selecciona una categoría";
+    }
 
-  if (!form.unit) {
-    newErrors.unit = "Selecciona una unidad";
-  }
+    if (!form.cantidad) {
+      newErrors.cantidad = "Ingresa una cantidad";
+    } else if (Number(form.cantidad) <= 0) {
+      newErrors.cantidad = "Debe ser mayor a 0";
+    } else if (!Number.isInteger(Number(form.cantidad))) {
+      newErrors.cantidad = "Solo números enteros";
+    }
 
-  if (Object.keys(newErrors).length > 0) {
-    setErrors(newErrors);
-    setError("Corrige los campos marcados.");
-    return;
-  }
+    if (!form.unit) {
+      newErrors.unit = "Selecciona una unidad";
+    }
 
-  setErrors({});
-  setLoading(true);
-  setError(null);
-
-  try {
-    await createDonacion({
-      donante: form.donante_nombre.trim(),
-      producto: form.producto_nombre.trim(),
-      cantidad: Number(form.cantidad),
-      unit: form.unit,
-      categoria_id: form.categoria_id
-        ? Number(form.categoria_id)
-        : null,
-    });
-
-    setSuccess(true);
-    onSuccess?.();
-    setTimeout(handleClose, 1200);
-  } catch {
-    setError("Error al registrar la donación.");
-  } finally {
-    setLoading(false);
-  }
-};
-
-  const handleCreateCategory = async () => {
-    if (!newCategory.trim()) {
-      setCategoryError("Ingresa un nombre");
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
+    setErrors({});
+    setLoading(true);
+
     try {
-      setCategoryLoading(true);
-      setCategoryError("");
+      await createDonacion({
+        donante: form.donante_nombre.trim(),
+        producto: form.producto_nombre.trim(),
+        cantidad: Number(form.cantidad),
+        unit: form.unit,
+        categoria_id: Number(form.categoria_id),
+      });
 
-      const category = await createCategory(newCategory.trim());
-
-      setCategorias((prev) => [...prev, category]);
-
-      setForm((prev) => ({
-        ...prev,
-        categoria_id: category.id,
-      }));
-
-      setNewCategory("");
-      setCategoryModalOpen(false);
-    } catch (error) {
-      console.error(error);
-      setCategoryError("Error creando categoría");
+      setSuccess(true);
+      onSuccess?.();
+      setTimeout(handleClose, 800);
+    } catch {
+      setError("Error al registrar la donación.");
     } finally {
-      setCategoryLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <>
-      <Dialog
-        open={open}
-        onClose={loading ? undefined : handleClose}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: "32px", padding: 2 } }}
+    <Dialog
+      open={open}
+      onClose={loading ? undefined : handleClose}
+      PaperProps={{
+        sx: {
+          borderRadius: "12px",
+          width: "100%",
+          maxWidth: "576px",
+          margin: "16px",
+          boxShadow: "0px 8px 24px rgba(0, 0, 0, 0.1)",
+          overflow: "hidden",
+        },
+      }}
+    >
+      {/* 1. MODAL HEADER */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          padding: "32px 40px 24px 24px",
+          gap: "8px",
+          boxSizing: "border-box",
+        }}
       >
-        <DialogContent>
-          <Typography
-            variant="h4"
-            sx={{ fontWeight: "bold", color: "#171717", marginBottom: 4 }}
+        <Typography
+          sx={{
+            fontWeight: 700,
+            fontSize: "24px",
+            color: "#171717",
+            lineHeight: 1.2,
+          }}
+        >
+          Registrar donación
+        </Typography>
+      </Box>
+
+      {/* 2. MODAL FORM */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          padding: "0px 24px 32px 24px",
+          gap: "20px",
+          width: "100%",
+          boxSizing: "border-box",
+        }}
+      >
+        {error && (
+          <Alert severity="error" sx={{ width: "100%", borderRadius: "12px" }}>
+            {error}
+          </Alert>
+        )}
+        {success && (
+          <Alert
+            severity="success"
+            sx={{ width: "100%", borderRadius: "12px" }}
           >
-            Registrar donación
-          </Typography>
+            ¡Donación registrada!
+          </Alert>
+        )}
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
-          )}
-          {success && (
-            <Alert severity="success" sx={{ mb: 3 }}>
-              ¡Donación registrada!
-            </Alert>
-          )}
+        <TextField
+          fullWidth
+          label="Donante"
+          name="donante_nombre"
+          value={form.donante_nombre}
+          onChange={(e) => {
+            handleChange(e);
+            setErrors((prev) => ({ ...prev, donante_nombre: "" }));
+          }}
+          error={!!errors.donante_nombre}
+          helperText={errors.donante_nombre}
+          sx={textFieldStyle}
+        />
 
+        <TextField
+          fullWidth
+          label="Producto"
+          placeholder="Alimento/producto"
+          name="producto_nombre"
+          value={form.producto_nombre}
+          onChange={(e) => {
+            handleChange(e);
+            setErrors((prev) => ({ ...prev, producto_nombre: "" }));
+          }}
+          error={!!errors.producto_nombre}
+          helperText={errors.producto_nombre}
+          sx={textFieldStyle}
+        />
+
+        <TextField
+          fullWidth
+          select
+          label="Categoría"
+          name="categoria_id"
+          value={form.categoria_id}
+          onChange={(e) => {
+            handleChange(e);
+            setErrors((prev) => ({ ...prev, categoria_id: "" }));
+          }}
+          error={!!errors.categoria_id}
+          helperText={errors.categoria_id}
+          sx={textFieldStyle}
+        >
+          {categorias.map((cat) => (
+            <MenuItem key={cat.id} value={cat.id}>
+              {cat.nombre}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "16px",
+            width: "100%",
+          }}
+        >
           <TextField
-  fullWidth
-  label="Donante"
-  name="donante_nombre"
-  value={form.donante_nombre}
-  onChange={(e) => {
-    handleChange(e);
-
-    setErrors((prev) => ({
-      ...prev,
-      donante_nombre: "",
-    }));
-  }}
-  error={!!errors.donante_nombre}
-  helperText={errors.donante_nombre}
-  sx={{ marginBottom: 3 }}
-/>
-<TextField
-  fullWidth
-  label="Producto"
-  placeholder="Alimento/producto"
-  name="producto_nombre"
-  value={form.producto_nombre}
-  onChange={(e) => {
-    handleChange(e);
-
-    setErrors((prev) => ({
-      ...prev,
-      producto_nombre: "",
-    }));
-  }}
-  error={!!errors.producto_nombre}
-  helperText={errors.producto_nombre}
-  sx={{ marginBottom: 3 }}
-/>
-
-          <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1 }}>
-            <Button
-              size="small"
-              startIcon={<AddIcon />}
-              onClick={() => setCategoryModalOpen(true)}
-              sx={{ textTransform: "none" }}
-            >
-              Agregar categoría
-            </Button>
-          </Box>
+            fullWidth
+            label="Cantidad"
+            type="number"
+            name="cantidad"
+            value={form.cantidad}
+            onChange={(e) => {
+              handleChange(e);
+              setErrors((prev) => ({ ...prev, cantidad: "" }));
+            }}
+            error={!!errors.cantidad}
+            helperText={errors.cantidad}
+            inputProps={{ min: 1 }}
+            sx={textFieldStyle}
+          />
 
           <TextField
             fullWidth
             select
-            label="Categoría"
-            name="categoria_id"
-            value={form.categoria_id}
-            onChange={handleChange}
-            sx={{ marginBottom: 3 }}
-          >
-            <MenuItem value="">Sin categoría</MenuItem>
-            {categorias.map((cat) => (
-              <MenuItem key={cat.id} value={cat.id}>
-                {cat.nombre}
-              </MenuItem>
-            ))}
-          </TextField>
-
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 2,
-              marginBottom: 4,
-            }}
-          >
-           <TextField
-  fullWidth
-  label="Cantidad"
-  type="number"
-  name="cantidad"
-  value={form.cantidad}
-  onChange={(e) => {
-    handleChange(e);
-
-    setErrors((prev) => ({
-      ...prev,
-      cantidad: "",
-    }));
-  }}
-  error={!!errors.cantidad}
-  helperText={errors.cantidad}
-  inputProps={{ min: 1 }}
-/>
-           <TextField
-  fullWidth
-  select
-  label="Unidad"
-  name="unit"
-  value={form.unit}
-  onChange={(e) => {
-    handleChange(e);
-
-    setErrors((prev) => ({
-      ...prev,
-      unit: "",
-    }));
-  }}
-  error={!!errors.unit}
-  helperText={errors.unit}
->
-  <MenuItem value="pz">Pz</MenuItem>
-  <MenuItem value="kg">Kg</MenuItem>
-  <MenuItem value="gr">Gramos</MenuItem>
-  <MenuItem value="L">Litros</MenuItem>
-  <MenuItem value="ml">Mililitros</MenuItem>
-</TextField>
-          </Box>
-
-          <Box sx={{ display: "flex", gap: 2 }}>
-            <Button
-              fullWidth
-              variant="outlined"
-              onClick={handleClose}
-              sx={{
-                borderRadius: "16px",
-                paddingY: 1.5,
-                textTransform: "none",
-              }}
-            >
-              Cancelar
-            </Button>
-            <LoadingButton
-              fullWidth
-              variant="contained"
-              loading={loading}
-              disabled={loading}
-              onClick={handleSubmit}
-              sx={{
-                borderRadius: "16px",
-                paddingY: 1.5,
-                textTransform: "none",
-                backgroundColor: "#F97316",
-                "&:hover": { backgroundColor: "#EA580C" },
-              }}
-            >
-              Registrar donación
-            </LoadingButton>
-          </Box>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={categoryModalOpen}
-        onClose={() => {
-          setCategoryModalOpen(false);
-          setNewCategory("");
-          setCategoryError("");
-        }}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogContent>
-          <Typography variant="h6" sx={{ fontWeight: "bold", mb: 3 }}>
-            Nueva categoría
-          </Typography>
-
-          <TextField
-            fullWidth
-            label="Nombre"
-            value={newCategory}
+            label="Unidad"
+            name="unit"
+            value={form.unit}
             onChange={(e) => {
-              setNewCategory(e.target.value);
-              setCategoryError("");
+              handleChange(e);
+              setErrors((prev) => ({ ...prev, unit: "" }));
             }}
-            error={!!categoryError}
-            helperText={categoryError}
-            sx={{ mb: 3 }}
-          />
+            error={!!errors.unit}
+            helperText={errors.unit}
+            sx={textFieldStyle}
+          >
+            <MenuItem value="pz">Pz</MenuItem>
+            <MenuItem value="kg">Kg</MenuItem>
+            <MenuItem value="gr">Gramos</MenuItem>
+            <MenuItem value="L">Litros</MenuItem>
+            <MenuItem value="ml">Mililitros</MenuItem>
+          </TextField>
+        </Box>
 
-          <Box sx={{ display: "flex", gap: 2 }}>
-            <Button
-              fullWidth
-              variant="outlined"
-              onClick={() => {
-                setCategoryModalOpen(false);
-                setNewCategory("");
-                setCategoryError("");
-              }}
-            >
-              Cancelar
-            </Button>
+        {/* 3. BOTONES DE ACCIÓN */}
+        <Box sx={{ display: "flex", gap: "16px", width: "100%", mt: 1 }}>
+          <Button
+            fullWidth
+            variant="outlined"
+            onClick={handleClose}
+            disabled={loading}
+            sx={{
+              borderRadius: "12px",
+              paddingY: 1.2,
+              textTransform: "none",
+              fontWeight: 400,
+              borderColor: "#E7E5E4",
+              color: "#44403C",
+            }}
+          >
+            Cancelar
+          </Button>
 
-            <LoadingButton
-              fullWidth
-              loading={categoryLoading}
-              disabled={categoryLoading}
-              onClick={handleCreateCategory}
-              variant="contained"
-              sx={{
-                backgroundColor: "#F97316",
-                "&:hover": { backgroundColor: "#EA580C" },
-              }}
-            >
-              Agregar categoría
-            </LoadingButton>
-          </Box>
-        </DialogContent>
-      </Dialog>
-    </>
+          <LoadingButton
+            fullWidth
+            variant="contained"
+            loading={loading}
+            disabled={loading}
+            onClick={handleSubmit}
+            sx={{
+              borderRadius: "12px",
+              paddingY: 1.2,
+              textTransform: "none",
+              fontWeight: 600,
+              backgroundColor: "#029739",
+              boxShadow: "none",
+              "&:hover": {
+                backgroundColor: "#15803d",
+                boxShadow: "none",
+              },
+            }}
+          >
+            Registrar donación
+          </LoadingButton>
+        </Box>
+      </Box>
+    </Dialog>
   );
 };
 

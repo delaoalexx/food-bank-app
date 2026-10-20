@@ -1,36 +1,44 @@
-import { Box, Typography } from "@mui/material";
+import React from "react";
+import { Paper, Typography } from "@mui/material";
 
-const BeneficiaryStatCard = ({ icon, value, label }) => {
+const BeneficiaryStatCard = ({ value, label }) => {
   return (
-    <Box
+    <Paper
+      elevation={0}
       sx={{
+        width: "100%",
+        padding: "20px 24px",
+        borderRadius: "12px",
+        border: "1px solid #E7E5E4",
+        backgroundColor: "#FFFFFF",
+        boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.05)",
+        boxSizing: "border-box",
         display: "flex",
-        alignItems: "center",
-        gap: 2,
-        backgroundColor: "#ffffff",
-        borderRadius: 4,
-        padding: "24px 32px",
-        flex: 1,
-        border: "1px solid #e5e7eb",
+        flexDirection: "column",
+        justifyContent: "center",
       }}
     >
-      <Box
+      <Typography
         sx={{
-          backgroundColor: "#fff4ed",
-          borderRadius: 3,
-          padding: "12px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          fontSize: "14px",
+          fontWeight: 400,
+          color: "#6B7280",
+          marginBottom: "4px",
         }}
       >
-        {icon}
-      </Box>
-      <Box>
-        <Typography variant="h3" fontWeight="bold">{value}</Typography>
-        <Typography color="text.secondary" fontSize="14px">{label}</Typography>
-      </Box>
-    </Box>
+        {label}
+      </Typography>
+      <Typography
+        sx={{
+          fontSize: "40px",
+          fontWeight: 700,
+          color: "#1F2937",
+          lineHeight: 1.1,
+        }}
+      >
+        {value}
+      </Typography>
+    </Paper>
   );
 };
 
