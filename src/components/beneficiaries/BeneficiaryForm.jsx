@@ -136,7 +136,7 @@ const BeneficiaryForm = ({ open, setOpen, onSuccess }) => {
 
         <TextField
           fullWidth
-          label="Nombre de la familia / persona"
+          label="Nombre de la familia / beneficiario"
           value={nombre}
           onChange={(e) => {
             setNombre(e.target.value);

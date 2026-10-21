@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import RequestCard from "../../components/requests/RequestCard";
 import EmptyState from "../../components/common/EmptyState";
-import CheckCircleOutlinedIcon from "@mui/icons-material/CheckCircleOutlined";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import {
   Box,
   Typography,
@@ -156,7 +156,7 @@ const Received = () => {
             }}
           >
             <EmptyState
-              icon={CheckCircleOutlinedIcon}
+              icon={CheckCircleIcon}
               title="Todo al día"
               description="No tienes solicitudes pendientes por responder."
               sx={{
