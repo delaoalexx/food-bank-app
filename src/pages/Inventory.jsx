@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { Box, Typography, Button, Paper, Pagination } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import MainLayout from "../components/layout/MainLayout";
-import SearchBar from "../components/inventory/SearchBar";
+import SearchBar, { normalizeText } from "../components/inventory/SearchBar";
 import InventoryTable from "../components/inventory/InventoryTable";
 import AddProductModal from "../components/inventory/AddProductModal";
 import { getProducts } from "../services/api";
@@ -46,10 +46,11 @@ const Inventory = () => {
   }, []);
 
   const filteredProducts = useMemo(() => {
+    const term = normalizeText(searchTerm);
     return products.filter(
       (product) =>
         product.quantity > 0 &&
-        (product.name ?? "").toLowerCase().includes(searchTerm.toLowerCase()),
+        normalizeText(product.name ?? "").includes(term),
     );
   }, [searchTerm, products]);
 
@@ -145,7 +146,7 @@ const Inventory = () => {
         <Paper
           sx={{
             padding: "24px 24px 24px 24px",
-            borderRadius: "12px", // Ajustado a Figma
+            borderRadius: "12px",
             border: "1px solid #E7E5E4",
             boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.05)",
             backgroundColor: "#FFFFFF",

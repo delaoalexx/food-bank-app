@@ -2,6 +2,14 @@ import React from "react";
 import { TextField, Box } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 
+// Helper para remover acentos/tildes y convertir a minúsculas
+export const normalizeText = (text = "") => {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+};
+
 const SearchBar = ({ placeholder = "Buscar productos", value, onChange }) => {
   return (
     <Box

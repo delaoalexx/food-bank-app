@@ -3,7 +3,7 @@ import { Box, Typography, Paper, Pagination } from "@mui/material";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 
 import MainLayout from "../components/layout/MainLayout";
-import SearchBar from "../components/inventory/SearchBar";
+import SearchBar, { normalizeText } from "../components/inventory/SearchBar";
 import InventoryTable from "../components/inventory/InventoryTable";
 import BranchSelector from "../components/network/BranchSelector";
 import {
@@ -22,7 +22,7 @@ const NetworkInventory = () => {
 
   const availableBranches = useMemo(
     () => allBranches.filter((branch) => branch.key !== CURRENT_NODE),
-    [CURRENT_NODE]
+    [CURRENT_NODE],
   );
 
   const [selectedBranchId, setSelectedBranchId] = useState("");
@@ -53,7 +53,7 @@ const NetworkInventory = () => {
 
   const selectedBranchData = useMemo(
     () => availableBranches.find((branch) => branch.id === selectedBranchId),
-    [selectedBranchId, availableBranches]
+    [selectedBranchId, availableBranches],
   );
 
   const fetchProducts = async () => {
@@ -89,7 +89,7 @@ const NetworkInventory = () => {
         const productosReplica = replicas.filter(
           (p) =>
             p.banco_origen?.toLowerCase() ===
-            selectedBranchData.key.toLowerCase()
+            selectedBranchData.key.toLowerCase(),
         );
 
         const formattedReplica = productosReplica.map((product) => ({
@@ -114,15 +114,14 @@ const NetworkInventory = () => {
     fetchProducts();
   }, [selectedBranchData]);
 
-  const filteredProducts = useMemo(
-    () =>
-      branchProducts.filter(
-        (product) =>
-          (isReplica || product.quantity > 0) &&
-          (product.name ?? "").toLowerCase().includes(searchTerm.toLowerCase())
-      ),
-    [branchProducts, searchTerm, isReplica]
-  );
+  const filteredProducts = useMemo(() => {
+    const term = normalizeText(searchTerm);
+    return branchProducts.filter(
+      (product) =>
+        (isReplica || product.quantity > 0) &&
+        normalizeText(product.name ?? "").includes(term),
+    );
+  }, [branchProducts, searchTerm, isReplica]);
 
   const paginatedProducts = useMemo(() => {
     const start = (page - 1) * productsPerPage;
@@ -139,7 +138,9 @@ const NetworkInventory = () => {
 
   return (
     <MainLayout>
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
+      <Box
+        sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}
+      >
         <Box
           sx={{
             display: "flex",
@@ -200,7 +201,8 @@ const NetworkInventory = () => {
                 lineHeight: 1.4,
               }}
             >
-              Mostrando datos replicados. La sucursal seleccionada no está disponible.
+              Mostrando datos replicados. La sucursal seleccionada no está
+              disponible.
             </Typography>
           </Box>
         )}
@@ -270,7 +272,6 @@ const NetworkInventory = () => {
             </>
           )}
         </Paper>
-
       </Box>
     </MainLayout>
   );
