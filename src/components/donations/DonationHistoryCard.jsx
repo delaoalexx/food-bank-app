@@ -19,8 +19,8 @@ const DonationHistoryCard = ({ donor, description, date, isLast }) => {
       <Box sx={{ display: "flex", flexDirection: "column", gap: 0.25 }}>
         <Typography
           sx={{
-            fontWeight: 700,
-            fontSize: "18px", // Tamaño ajustado a 18px
+            fontWeight: 500,
+            fontSize: "16px", 
             color: "#171717",
           }}
         >

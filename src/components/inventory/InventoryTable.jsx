@@ -1,5 +1,4 @@
 import React from "react";
-
 import {
   Table,
   TableBody,
@@ -10,8 +9,9 @@ import {
   Skeleton,
   Box,
 } from "@mui/material";
-
+import Inventory2Icon from "@mui/icons-material/Inventory2";
 import InventoryRow from "./InventoryRow";
+import EmptyState from "../common/EmptyState";
 
 const InventoryTable = ({
   products = [],
@@ -80,7 +80,6 @@ const InventoryTable = ({
                     }}
                   >
                     <Skeleton variant="rounded" width={38} height={38} />
-
                     <Skeleton width={120} height={24} />
                   </Box>
                 </TableCell>
@@ -107,12 +106,14 @@ const InventoryTable = ({
                 align="center"
                 sx={{
                   paddingY: 6,
-                  color: "#A3A3A3",
-                  fontSize: "15px",
                   borderBottom: "none",
                 }}
               >
-                Sin productos registrados
+                <EmptyState
+                  icon={Inventory2Icon}
+                  title="Sin productos registrados"
+                  description="Actualmente no hay productos disponibles en este inventario."
+                />
               </TableCell>
             </TableRow>
           ) : (

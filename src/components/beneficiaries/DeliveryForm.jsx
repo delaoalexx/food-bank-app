@@ -439,7 +439,6 @@ const DeliveryForm = ({ open, setOpen, family, onSuccess }) => {
           gap: "16px",
           width: "100%",
           padding: "16px 24px 24px 24px",
-          borderTop: "1px solid #E7E5E4",
           boxSizing: "border-box",
           flexShrink: 0,
         }}
