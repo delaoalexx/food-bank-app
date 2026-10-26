@@ -1,7 +1,16 @@
-import React from "react";
-import { Card, CardContent, Typography, Button, Box } from "@mui/material";
+import React, { useState } from "react";
+import {
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  Box,
+  Collapse,
+  IconButton,
+} from "@mui/material";
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 function RequestCard({
   solicitud = {},
@@ -20,12 +29,16 @@ function RequestCard({
     aprobacion,
     error,
     created_at,
+    items = [], // Arreglo de productos
   } = solicitud;
+
+  const [expanded, setExpanded] = useState(false);
 
   const esEnviada = type === "sent";
   const estadoActual = aprobacion || estado;
+  const tieneVariosProductos = items && items.length > 1;
 
-  // Paleta de etiquetas de estado según tu diseño
+  // Paleta de etiquetas de estado
   const estadoStyle = {
     aceptado: { bg: "#DCFCE7", text: "#029739", label: "ACEPTADO" },
     COMPLETADO: { bg: "#DCFCE7", text: "#029739", label: "ACEPTADO" },
@@ -39,6 +52,11 @@ function RequestCard({
     label: String(estadoActual || "").toUpperCase(),
   };
 
+  // Resumen principal cuando está colapsado
+  const primerProducto = items.length > 0 ? items[0] : null;
+  const productosVisibles = items.slice(0, 3);
+  const restantes = items.length - productosVisibles.length;
+
   return (
     <Card
       sx={{
@@ -49,17 +67,18 @@ function RequestCard({
         backgroundColor: "#FFFFFF",
         boxSizing: "border-box",
         overflow: "hidden",
+        transition: "0.2s ease-in-out",
       }}
     >
       <CardContent
         sx={{
-          padding: "32px !important", // Padding exacto de Figma
+          padding: "24px 32px !important",
           display: "flex",
           flexDirection: "column",
-          gap: "16px", // Gap de 16px entre las 3 secciones principales
+          gap: "12px",
         }}
       >
-        {/* 1. CARD HEADER INFO */}
+        {/* 1. HEADER DE LA TARJETA */}
         <Box
           sx={{
             display: "flex",
@@ -99,28 +118,159 @@ function RequestCard({
           )}
         </Box>
 
-        {/* 2. PRODUCT ROW */}
+        {/* 2. VISTA RESUMEN */}
         <Box
           sx={{
             display: "flex",
+            justifyContent: "space-between",
             alignItems: "center",
+            flexWrap: "wrap",
+            gap: 1,
             width: "100%",
           }}
         >
           <Typography
             sx={{
-              fontSize: "24px",
+              fontSize: "22px",
               fontWeight: 700,
               color: "#171717",
               lineHeight: 1.2,
             }}
           >
-            {cantidad} {solicitud.producto?.unit || solicitud.unit || "kg"} de{" "}
-            {producto_nombre || "—"}
+            {tieneVariosProductos
+              ? `${items.length} productos solicitados`
+              : primerProducto
+                ? `${primerProducto.cantidad} ${primerProducto.unit} de ${primerProducto.nombre}`
+                : `${cantidad} ${solicitud.producto?.unit || solicitud.unit || "kg"} de ${producto_nombre || "—"}`}
           </Typography>
+
+          {tieneVariosProductos && (
+            <Button
+              size="small"
+              onClick={() => setExpanded((prev) => !prev)}
+              aria-expanded={expanded}
+              endIcon={
+                <ExpandMoreIcon
+                  sx={{
+                    transform: expanded ? "rotate(180deg)" : "none",
+                    transition: "transform 0.25s ease",
+                  }}
+                />
+              }
+              sx={{
+                borderRadius: 1.5,
+                textTransform: "none",
+                fontWeight: 600,
+                color: "#029739",
+                fontSize: "14px",
+                "&:hover": { backgroundColor: "#E8F6ED" },
+              }}
+            >
+              {expanded ? "Ocultar detalle" : "Ver detalle"}
+            </Button>
+          )}
         </Box>
 
-        {/* BLOQUE OPCIONAL: MOTIVO DE RECHAZO */}
+        {tieneVariosProductos && !expanded && (
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+            {productosVisibles.map((item, index) => (
+              <Box
+                key={index}
+                sx={{
+                  px: 1.75,
+                  py: 0.5,
+                  borderRadius: "50px",
+                  backgroundColor: "#FA7B0A",
+                  color: "#FFFFFF",
+                  fontSize: "13px",
+                  fontWeight: 400,
+                }}
+              >
+                <Box component="span" sx={{ fontWeight: 400 }}>
+                  {item.cantidad} {item.unit} {item.nombre}
+                </Box>
+              </Box>
+            ))}
+            {restantes > 0 && (
+              <Box
+                sx={{
+                  px: 1.5,
+                  py: 0.5,
+                  borderRadius: "50px",
+                  border: "1px dashed #A3A3A3",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color: "#737373",
+                }}
+              >
+                +{restantes} más
+              </Box>
+            )}
+          </Box>
+        )}
+
+        {/* 3. VISTA EXPANDIDA (DESPLEGABLE ACCORDION) */}
+        {tieneVariosProductos && (
+          <Collapse in={expanded} timeout="auto" unmountOnExit>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                width: "100%",
+                padding: "8px 16px",
+                backgroundColor: "#F9FAFB",
+                borderRadius: "12px",
+                border: "1px solid #F3F4F6",
+              }}
+            >
+              {items.map((item, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 2,
+                    py: 1.25,
+                    borderBottom:
+                      index !== items.length - 1 ? "1px solid #F3F4F6" : "none",
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      display: "flex",
+                      alignItems: "baseline",
+                      gap: 1.25,
+                      fontSize: "15px",
+                      fontWeight: 500,
+                      color: "#171717",
+                    }}
+                  >
+                    <Box
+                      component="span"
+                      sx={{ color: "#1F2937", fontWeight: 700 }}
+                    >
+                      •
+                    </Box>
+                    {item.nombre}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: "15px",
+                      fontWeight: 500,
+                      color: "#1F2937",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {item.cantidad} {item.unit}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          </Collapse>
+        )}
+
+        {/* MOTIVO DE RECHAZO (SI EXISTE) */}
         {(aprobacion === "denegado" ||
           estadoActual === "FALLIDO" ||
           estadoActual === "denegado") &&
@@ -136,6 +286,7 @@ function RequestCard({
                 border: "1px solid #F3F4F6",
                 width: "100%",
                 boxSizing: "border-box",
+                mt: 1,
               }}
             >
               <Typography
@@ -161,14 +312,14 @@ function RequestCard({
             </Box>
           )}
 
-        {/* 3. CARD FOOTER ACTIONS */}
+        {/* 4. FOOTER Y ACCIONES */}
         <Box
           sx={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
             width: "100%",
-            marginTop: 0.5,
+            marginTop: 1,
           }}
         >
           <Typography

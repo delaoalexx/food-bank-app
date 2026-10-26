@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import RequestCard from "../../components/requests/RequestCard";
 import EmptyState from "../../components/common/EmptyState";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -56,12 +56,67 @@ const Received = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleAprobar = async (id, origen) => {
+  // 1. AGRUPACIÓN DE SOLICITUDES RECIBIDAS POR PEDIDO
+  const solicitudesAgrupadas = useMemo(() => {
+    const VENTANA_MS = 10000; // Ventana de 10 segundos
+    const grupos = [];
+
+    [...solicitudes]
+      .sort(
+        (a, b) =>
+          new Date(b.created_at || b.fecha) - new Date(a.created_at || a.fecha),
+      )
+      .forEach((s) => {
+        const fecha = s.created_at || s.fecha;
+        const tiempo = new Date(fecha).getTime();
+        const sucursalSolicitante = s.destino || s.origen;
+
+        let grupo = grupos.find(
+          (g) =>
+            g.destino === sucursalSolicitante &&
+            Math.abs(g.tiempo - tiempo) <= VENTANA_MS,
+        );
+
+        if (!grupo) {
+          grupo = {
+            id: `${sucursalSolicitante}_${fecha}`,
+            destino: sucursalSolicitante,
+            origen: s.origen,
+            created_at: fecha,
+            tiempo,
+            aprobacion: s.aprobacion || s.estado,
+            error: s.error,
+            items: [],
+            // Arreglo con los IDs de transferencia para procesar todo el lote en conjunto
+            rawIds: [],
+          };
+          grupos.push(grupo);
+        }
+
+        grupo.rawIds.push(s.transferencia_id || s.id);
+        grupo.items.push({
+          nombre: s.producto_nombre,
+          cantidad: s.cantidad,
+          unit: s.producto?.unit || s.unit || "pz",
+        });
+      });
+
+    return grupos;
+  }, [solicitudes]);
+
+  // 2. APROBAR TODOS LOS ÍTEMS DEL PEDIDO
+  const handleAprobar = async (pedido) => {
     try {
-      await aprobarSolicitud(id, origen);
+      if (pedido.rawIds && pedido.rawIds.length > 0) {
+        await Promise.all(
+          pedido.rawIds.map((id) => aprobarSolicitud(id, pedido.destino)),
+        );
+      } else {
+        await aprobarSolicitud(pedido.transferencia_id, pedido.destino);
+      }
       fetchData();
     } catch (error) {
-      console.error("Error aprobando:", error);
+      console.error("Error aprobando pedido:", error);
     }
   };
 
@@ -77,31 +132,36 @@ const Received = () => {
     setMotivo("");
   };
 
+  // 3. RECHAZAR TODOS LOS ÍTEMS DEL PEDIDO
   const confirmarRechazo = async () => {
-    if (!motivo.trim() || rechazando) return;
+    if (!motivo.trim() || rechazando || !solicitudSeleccionada) return;
 
     setRechazando(true);
     try {
-      await rechazarSolicitud(
+      const ids = solicitudSeleccionada.rawIds || [
         solicitudSeleccionada.transferencia_id,
-        solicitudSeleccionada.origen,
-        motivo,
+      ];
+      await Promise.all(
+        ids.map((id) =>
+          rechazarSolicitud(id, solicitudSeleccionada.destino, motivo),
+        ),
       );
+
       handleModalClose();
       fetchData();
     } catch (error) {
-      console.error("Error rechazando:", error);
+      console.error("Error rechazando pedido:", error);
     } finally {
       setRechazando(false);
     }
   };
 
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentSolicitudes = solicitudes.slice(
+  const currentSolicitudes = solicitudesAgrupadas.slice(
     startIndex,
     startIndex + itemsPerPage,
   );
-  const totalPages = Math.ceil(solicitudes.length / itemsPerPage);
+  const totalPages = Math.ceil(solicitudesAgrupadas.length / itemsPerPage);
 
   if (loading) {
     return (
@@ -144,7 +204,7 @@ const Received = () => {
           minHeight: "calc(100vh - 220px)",
         }}
       >
-        {solicitudes.length === 0 ? (
+        {solicitudesAgrupadas.length === 0 ? (
           <Box
             sx={{
               display: "flex",
@@ -159,30 +219,17 @@ const Received = () => {
               icon={CheckCircleIcon}
               title="Todo al día"
               description="No tienes solicitudes pendientes por responder."
-              sx={{
-                "& .MuiSvgIcon-root": { fontSize: 64, color: "#A3A3A3" },
-                "& .MuiTypography-h6": {
-                  fontSize: "20px",
-                  fontWeight: 700,
-                  mt: 2,
-                },
-                "& .MuiTypography-body2": {
-                  fontSize: "15px",
-                  color: "#737373",
-                  maxWidth: "380px",
-                },
-              }}
             />
           </Box>
         ) : (
           <>
-            {currentSolicitudes.map((s) => (
+            {currentSolicitudes.map((pedido) => (
               <RequestCard
-                key={s.transferencia_id || s.id}
-                solicitud={s}
+                key={pedido.id}
+                solicitud={pedido}
                 type="received"
-                onAprobar={() => handleAprobar(s.transferencia_id, s.origen)}
-                onRechazar={() => handleRechazar(s)}
+                onAprobar={() => handleAprobar(pedido)}
+                onRechazar={() => handleRechazar(pedido)}
               />
             ))}
 
@@ -208,7 +255,7 @@ const Received = () => {
         )}
       </Box>
 
-      {/* MODAL DE RECHAZO (HOMOLOGADO A ADDPRODUCTMODAL) */}
+      {/* MODAL DE RECHAZO */}
       <Dialog
         open={openReject}
         onClose={rechazando ? undefined : handleModalClose}
@@ -223,7 +270,6 @@ const Received = () => {
           },
         }}
       >
-        {/* MODAL HEADER */}
         <Box
           sx={{
             display: "flex",
@@ -246,7 +292,6 @@ const Received = () => {
           </Typography>
         </Box>
 
-        {/* MODAL FORM */}
         <Box
           sx={{
             display: "flex",
@@ -272,7 +317,6 @@ const Received = () => {
             sx={textFieldStyle}
           />
 
-          {/* BOTONES DE ACCIÓN */}
           <Box
             sx={{
               display: "flex",

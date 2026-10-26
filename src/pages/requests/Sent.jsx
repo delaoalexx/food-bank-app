@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import RequestCard from "../../components/requests/RequestCard";
 import EmptyState from "../../components/common/EmptyState";
 import CancelScheduleSendIcon from "@mui/icons-material/CancelScheduleSend";
@@ -93,6 +93,48 @@ const Sent = ({ open, setOpen }) => {
     const interval = setInterval(() => fetchSolicitudes(false), 10000);
     return () => clearInterval(interval);
   }, []);
+
+  // AGRUPACIÓN DE SOLICITUDES POR PEDIDO
+  const solicitudesAgrupadas = useMemo(() => {
+    const VENTANA_MS = 10000;
+    const grupos = [];
+
+    [...solicitudes]
+      .sort(
+        (a, b) =>
+          new Date(b.created_at || b.fecha) - new Date(a.created_at || a.fecha),
+      )
+      .forEach((s) => {
+        const fecha = s.created_at || s.fecha;
+        const tiempo = new Date(fecha).getTime();
+
+        let grupo = grupos.find(
+          (g) =>
+            g.origen === s.origen && Math.abs(g.tiempo - tiempo) <= VENTANA_MS,
+        );
+
+        if (!grupo) {
+          grupo = {
+            id: `${s.origen}_${fecha}`,
+            origen: s.origen,
+            created_at: fecha,
+            tiempo,
+            aprobacion: s.aprobacion || s.estado,
+            error: s.error,
+            items: [],
+          };
+          grupos.push(grupo);
+        }
+
+        grupo.items.push({
+          nombre: s.producto_nombre,
+          cantidad: s.cantidad,
+          unit: s.producto?.unit || s.unit || "pz",
+        });
+      });
+
+    return grupos;
+  }, [solicitudes]);
 
   useEffect(() => {
     if (productos.length > prevCount.current) {
@@ -235,7 +277,7 @@ const Sent = ({ open, setOpen }) => {
       } else {
         setProductos(fallidos);
         setError(
-          `No se pudieron enviar ${fallidos.length} de ${productos.length} productos. Los demás ya se enviaron; revisa los que siguen en la lista y vuelve a intentar.`,
+          `No se pudieron enviar ${fallidos.length} de ${productos.length} productos.`,
         );
       }
     } catch (e) {
@@ -247,11 +289,11 @@ const Sent = ({ open, setOpen }) => {
   };
 
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentSolicitudes = solicitudes.slice(
+  const currentSolicitudes = solicitudesAgrupadas.slice(
     startIndex,
     startIndex + itemsPerPage,
   );
-  const totalPages = Math.ceil(solicitudes.length / itemsPerPage);
+  const totalPages = Math.ceil(solicitudesAgrupadas.length / itemsPerPage);
 
   return (
     <>
@@ -292,7 +334,7 @@ const Sent = ({ open, setOpen }) => {
               </CardContent>
             </Card>
           ))
-        ) : solicitudes.length === 0 ? (
+        ) : solicitudesAgrupadas.length === 0 ? (
           <Box
             sx={{
               display: "flex",
@@ -307,27 +349,14 @@ const Sent = ({ open, setOpen }) => {
               icon={CancelScheduleSendIcon}
               title="Sin solicitudes enviadas"
               description="Aún no has solicitado productos a otras sucursales."
-              sx={{
-                "& .MuiSvgIcon-root": { fontSize: 64, color: "#A3A3A3" },
-                "& .MuiTypography-h6": {
-                  fontSize: "20px",
-                  fontWeight: 700,
-                  mt: 2,
-                },
-                "& .MuiTypography-body2": {
-                  fontSize: "15px",
-                  color: "#737373",
-                  maxWidth: "380px",
-                },
-              }}
             />
           </Box>
         ) : (
           <>
-            {currentSolicitudes.map((s) => (
+            {currentSolicitudes.map((pedido) => (
               <RequestCard
-                key={s.transferencia_id || s.id}
-                solicitud={s}
+                key={pedido.id}
+                solicitud={pedido}
                 type="sent"
                 showActions={false}
               />
@@ -355,7 +384,7 @@ const Sent = ({ open, setOpen }) => {
         )}
       </Box>
 
-      {/* MODAL NUEVA SOLICITUD (HOMOLOGADO A ADDPRODUCTMODAL) */}
+      {/* MODAL NUEVA SOLICITUD */}
       <Dialog
         open={open}
         onClose={enviando ? undefined : handleModalClose}
@@ -373,7 +402,6 @@ const Sent = ({ open, setOpen }) => {
           },
         }}
       >
-        {/* MODAL HEADER */}
         <Box
           sx={{
             display: "flex",
@@ -413,7 +441,6 @@ const Sent = ({ open, setOpen }) => {
           </Box>
         )}
 
-        {/* MODAL FORM */}
         <Box
           sx={{
             display: "flex",
@@ -453,17 +480,9 @@ const Sent = ({ open, setOpen }) => {
               display: "flex",
               flexDirection: "column",
               gap: 2,
+              mt: 2,
             }}
           >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                mb: "2px",
-              }}
-            ></Box>
-
             {productos.map((prod, index) => (
               <Box
                 key={prod.id}
@@ -481,11 +500,6 @@ const Sent = ({ open, setOpen }) => {
                   border: "1px solid #E7E5E4",
                   borderRadius: "12px",
                   padding: "10px",
-                  animation: "rowIn 0.18s ease-out",
-                  "@keyframes rowIn": {
-                    from: { opacity: 0, transform: "translateY(-6px)" },
-                    to: { opacity: 1, transform: "none" },
-                  },
                 }}
               >
                 <Typography
@@ -601,7 +615,6 @@ const Sent = ({ open, setOpen }) => {
           </Box>
         </Box>
 
-        {/* BOTONES DE ACCIÓN */}
         <Box
           sx={{
             display: "flex",
@@ -623,10 +636,6 @@ const Sent = ({ open, setOpen }) => {
               fontWeight: 400,
               borderColor: "#E7E5E4",
               color: "#44403C",
-              "&:hover": {
-                borderColor: "#A8A29E",
-                backgroundColor: "#F5F5F4",
-              },
             }}
           >
             Cancelar
