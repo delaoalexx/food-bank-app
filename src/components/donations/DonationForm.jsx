@@ -41,7 +41,7 @@ const DonationForm = ({ open, setOpen, onSuccess }) => {
     producto_nombre: "",
     categoria_id: "",
     cantidad: "",
-    unit: "pz",
+    unit: "",
   });
 
   const [categorias, setCategorias] = useState([]);
