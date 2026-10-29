@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Box, Button, Typography, Pagination, Skeleton } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import MainLayout from "../../components/layout/MainLayout";
@@ -12,7 +12,7 @@ import { BarChart } from "@mui/x-charts/BarChart";
 
 const Donation = () => {
   const [open, setOpen] = useState(false);
-  const [donaciones, setDonaciones] = useState([]);
+  const [rawDonaciones, setRawDonaciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
@@ -21,16 +21,7 @@ const Donation = () => {
     setLoading(true);
     try {
       const data = await getDonaciones();
-      const mapped = data.map((d) => ({
-        id: d.id,
-        donor: d.donante,
-        description: `${d.cantidad} ${d.producto?.unit || "pz"} ${
-          d.producto?.nombre || "producto"
-        }`.trim(),
-        date: new Date(d.fecha).toISOString().split("T")[0],
-      }));
-
-      setDonaciones(mapped);
+      setRawDonaciones(data || []);
       setCurrentPage(1);
     } catch (error) {
       console.error("Error cargando donaciones:", error);
@@ -43,19 +34,58 @@ const Donation = () => {
     fetchDonaciones();
   }, []);
 
-  const totalProductos = donaciones.reduce((acc, d) => {
-    const num = parseInt(d.description);
-    return acc + (isNaN(num) ? 0 : num);
-  }, 0);
+  // AGRUPACIÓN POR DONANTE Y FECHA
+  const donacionesAgrupadas = useMemo(() => {
+    const VENTANA_MS = 10000; // 10 segundos
+    const grupos = [];
+
+    [...rawDonaciones]
+      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+      .forEach((d) => {
+        const fechaStr = new Date(d.fecha).toISOString().split("T")[0];
+        const tiempo = new Date(d.fecha).getTime();
+        const donante = d.donante || "Desconocido";
+
+        let grupo = grupos.find(
+          (g) =>
+            g.donor === donante &&
+            g.date === fechaStr &&
+            Math.abs(g.tiempo - tiempo) <= VENTANA_MS,
+        );
+
+        if (!grupo) {
+          grupo = {
+            id: `${donante}_${d.fecha}_${d.id}`,
+            donor: donante,
+            date: fechaStr,
+            tiempo,
+            items: [],
+          };
+          grupos.push(grupo);
+        }
+
+        grupo.items.push({
+          nombre: d.producto?.nombre || "Producto",
+          cantidad: d.cantidad,
+          unit: d.producto?.unit || "pz",
+        });
+      });
+
+    return grupos;
+  }, [rawDonaciones]);
+
+  const totalProductos = rawDonaciones.reduce(
+    (acc, d) => acc + (Number(d.cantidad) || 0),
+    0,
+  );
 
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentDonaciones = donaciones.slice(
+  const currentDonaciones = donacionesAgrupadas.slice(
     startIndex,
     startIndex + itemsPerPage,
   );
-  const totalPages = Math.ceil(donaciones.length / itemsPerPage);
+  const totalPages = Math.ceil(donacionesAgrupadas.length / itemsPerPage);
 
-  // Datos para la gráfica de donaciones recibidas
   const chartDays = [
     "Lunes",
     "Martes",
@@ -72,7 +102,7 @@ const Donation = () => {
       <Box
         sx={{ display: "flex", flexDirection: "column", gap: 3, width: "100%" }}
       >
-        {/* 1. HEADER SECTION */}
+        {/* HEADER */}
         <Box
           sx={{
             display: "flex",
@@ -108,17 +138,16 @@ const Donation = () => {
           </Button>
         </Box>
 
-        {/* 2. STATS & GRAPH SECTION */}
+        {/* STATS & CHART */}
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "264px 1fr" }, // 264px fijos para stats, 1fr para que la gráfica llene sin dejar blanco
+            gridTemplateColumns: { xs: "1fr", md: "264px 1fr" },
             gap: "32px",
             alignItems: "stretch",
             width: "100%",
           }}
         >
-          {/* Tarjetas de Estadísticas (Ancho exacto de Figma: 264px) */}
           <Box
             sx={{
               width: "100%",
@@ -128,7 +157,7 @@ const Donation = () => {
             }}
           >
             <DonationStatCard
-              value={donaciones.length}
+              value={donacionesAgrupadas.length}
               label="Donaciones totales"
             />
             <DonationStatCard
@@ -137,7 +166,6 @@ const Donation = () => {
             />
           </Box>
 
-          {/* Área de Gráfica (Ocupa todo el espacio restante sin barras deformes) */}
           <Box
             sx={{
               display: "flex",
@@ -163,7 +191,7 @@ const Donation = () => {
                   {
                     scaleType: "band",
                     data: chartDays,
-                    categoryGapRatio: 0.65, // Genera separación limpia para que las barras no se ensanchen
+                    categoryGapRatio: 0.65,
                   },
                 ]}
                 series={[{ data: chartData, color: "#029739" }]}
@@ -174,7 +202,7 @@ const Donation = () => {
           </Box>
         </Box>
 
-        {/* 3. HISTORIAL DE DONACIONES */}
+        {/* HISTORIAL */}
         <Box sx={{ width: "100%", marginTop: 1 }}>
           <Typography
             sx={{
@@ -193,7 +221,7 @@ const Donation = () => {
                 <Skeleton key={i} height={60} />
               ))}
             </Box>
-          ) : donaciones.length === 0 ? (
+          ) : donacionesAgrupadas.length === 0 ? (
             <Box sx={{ py: 6, display: "flex", justifyContent: "center" }}>
               <EmptyState
                 icon={VolunteerActivismIcon}
@@ -210,7 +238,7 @@ const Donation = () => {
                   <DonationHistoryCard
                     key={d.id}
                     donor={d.donor}
-                    description={d.description}
+                    items={d.items}
                     date={d.date}
                     isLast={index === currentDonaciones.length - 1}
                   />
@@ -240,7 +268,6 @@ const Donation = () => {
         </Box>
       </Box>
 
-      {/* MODAL FORMULARIO */}
       <DonationForm open={open} setOpen={setOpen} onSuccess={fetchDonaciones} />
     </MainLayout>
   );
